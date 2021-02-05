@@ -33,7 +33,7 @@
 // File name     : Goldschmidt_Integer_Divider_2CPS.v
 // Author        : Jose R Garcia
 // Created       : 2021/01/23 11:23:01
-// Last modified : 2021/01/23 13:27:19
+// Last modified : 2021/02/05 10:19:10
 // Project Name  : ORCs
 // Module Name   : Goldschmidt_Integer_Divider_2CPS
 // Description   : The Goldschmidt divider is an iterative method
@@ -57,33 +57,33 @@
 /////////////////////////////////////////////////////////////////////////////////
 module Goldschmidt_Integer_Divider_2CPS #(
   parameter integer P_GID_FACTORS_MSB  = 31,
-  parameter integer P_GID_ACCURACY_LVL = 9,
-  parameter integer P_GID_ROUND_UP_LVL = 3
+  parameter integer P_GID_ADDR_MSB     = 1,
+  parameter integer P_GID_ACCURACY_LVL = 12,
+  parameter integer P_GID_ROUND_UP_LVL = 2,
+  parameter integer P_GID_ANLOGIC_MUL  = 0
 )(
   input i_clk,
   input i_reset_sync,
   // WB (Pipeline) Interface
-  input        i_slave_stb, // stb_i, start signal
-  input  [1:0] i_slave_tga, // [1] 0=quotient, 1=rem; [0] 0=signed, 1=unsigned
-  output       o_slave_ack, // ack_o, don signal
-  // WB(pipeline) master Read Interface
+  input                     i_slave_stb, // stb_i, start signal
+  input  [P_GID_ADDR_MSB:0] i_slave_addr, // stb_i, start signal
+  input  [1:0]              i_slave_tga, // [1] 0=quotient, 1=rem; [0] 0=signed, 1=unsigned
+  // WB(pipeline) Master Read Interface
   input  [P_GID_FACTORS_MSB:0] i_master_div0_read_data, // WB data, dividend
-  // WB(pipeline) master Read Interface
+  // WB(pipeline) Master Read Interface
   input  [P_GID_FACTORS_MSB:0] i_master_div1_read_data, // WB data, divisor
-  // WB(pipeline) master Write Interface
-  output [P_GID_FACTORS_MSB:0] o_master_div_write_data, // WB data, result
-  // Multiplier interface
-  output [((P_GID_FACTORS_MSB+1)*2)-1:0] o_multiplicand,
-  output [((P_GID_FACTORS_MSB+1)*2)-1:0] o_multiplier,
-  input  [((P_GID_FACTORS_MSB+1)*4)-1:0] i_product
+  // WB(pipeline) Master Write Interface
+  output                       o_master_div_write_stb,  // WB stb, result
+  output [P_GID_ADDR_MSB:0]    o_master_div_write_addr, // WB data, result
+  output [P_GID_FACTORS_MSB:0] o_master_div_write_data  // WB data, result
 );
 
   ///////////////////////////////////////////////////////////////////////////////
   // Internal Parameter Declarations
   ///////////////////////////////////////////////////////////////////////////////
   // Misc.
-  localparam [P_GID_FACTORS_MSB:0] L_GID_NUMBER_TWO       = 2;
-  localparam [P_GID_FACTORS_MSB:0] L_GID_ZERO_FILLER      = 0;
+  localparam [P_GID_FACTORS_MSB:0] L_GID_NUMBER_TWO  = 2;
+  localparam [P_GID_FACTORS_MSB:0] L_GID_ZERO_FILLER = 0;
   //
   localparam integer L_GID_MUL_FACTORS_MSB  = ((P_GID_FACTORS_MSB+1)*2)-1;
   localparam integer L_GID_STEP_PRODUCT_MSB = ((L_GID_MUL_FACTORS_MSB+1)+P_GID_FACTORS_MSB);
@@ -91,11 +91,10 @@ module Goldschmidt_Integer_Divider_2CPS #(
   localparam integer L_GID_RESULT_LSB       = (P_GID_FACTORS_MSB+1)*2;
   // Program Counter FSM States
   localparam [2:0] S_IDLE                 = 3'h0; // Waits for valid factors.
-  localparam [2:0] S_SHIFT_DIVISOR_POINT  = 3'h1; // multiply the divisor by minus powers of ten to shift the decimal point.
-  localparam [2:0] S_SHIFT_DIVIDEND_POINT = 3'h2; // multiply the dividend by minus powers of ten to shift the decimal point.
-  localparam [2:0] S_HALF_STEP_ONE        = 3'h3; // D[i] * (2-d[i]); were i is the iteration.
-  localparam [2:0] S_HALF_STEP_TWO        = 3'h4; // d[i] * (2-d[i]); were i is the iteration.
-  localparam [2:0] S_REMAINDER_TO_NATURAL = 3'h5; // Convert remainder from decimal fraction to a natural number.
+  localparam [2:0] S_SHIFT_DIVIDEND_POINT = 3'h1; // multiply the dividend by minus powers of ten to shift the decimal point.
+  localparam [2:0] S_HALF_STEP_ONE        = 3'h2; // D[i] * (2-d[i]); were i is the iteration.
+  localparam [2:0] S_HALF_STEP_TWO        = 3'h3; // d[i] * (2-d[i]); were i is the iteration.
+  localparam [2:0] S_REMAINDER_TO_NATURAL = 3'h4; // Convert remainder from decimal fraction to a natural number.
   // Divider LUT values
   localparam [P_GID_FACTORS_MSB:0] L_REG_E10 = 429496730; // X.1
   localparam [P_GID_FACTORS_MSB:0] L_REG_E100 = 42949673; // X.01
@@ -106,16 +105,24 @@ module Goldschmidt_Integer_Divider_2CPS #(
   localparam [P_GID_FACTORS_MSB:0] L_REG_E10000000 = 429; // X.0000001
   localparam [P_GID_FACTORS_MSB:0] L_REG_E100000000 = 43; // X.00000001
   localparam [P_GID_FACTORS_MSB:0] L_REG_E1000000000 = 4; // X.000000001
-  // Divisor convergence threshold
-  localparam [P_GID_ACCURACY_LVL-1:0] L_CONVERGENCE_THRESHOLD = -1;
   // Round up bit limits
-  localparam integer L_GID_ROUND_LSB = L_GID_RESULT_LSB-3-P_GID_ROUND_UP_LVL;
+  localparam integer L_GID_ROUND_LSB = L_GID_RESULT_LSB-1-P_GID_ROUND_UP_LVL;
   
   ///////////////////////////////////////////////////////////////////////////////
   // Internal Signals Declarations
   ///////////////////////////////////////////////////////////////////////////////
   // Offset Counter
-  reg [P_GID_FACTORS_MSB:0] r_lut_value;
+  wire [P_GID_FACTORS_MSB:0] w_lut_value = i_slave_stb==1'b1 ? (
+                                             w_divisor < 20        ? L_REG_E10 : 
+                                             w_divisor < 200       ? L_REG_E100 :
+                                             w_divisor < 2000      ? L_REG_E1000 :
+                                             w_divisor < 20000     ? L_REG_E10000 :
+                                             w_divisor < 200000    ? L_REG_E100000 :
+                                             w_divisor < 2000000   ? L_REG_E1000000 :
+                                             w_divisor < 20000000  ? L_REG_E10000000 :
+                                             w_divisor < 200000000 ? L_REG_E100000000 :
+                                                                     L_REG_E1000000000) : 
+                                            'h0;
   // Divider Accumulator signals
   reg  [2:0]                     r_divider_state;
   wire [L_GID_MUL_FACTORS_MSB:0] w_number_two_extended = {L_GID_NUMBER_TWO,L_GID_ZERO_FILLER};
@@ -123,85 +130,39 @@ module Goldschmidt_Integer_Divider_2CPS #(
   wire                           w_divisor_not_zero    = i_master_div1_read_data==0 ? 1'b0 : 1'b1;
   reg  [P_GID_FACTORS_MSB:0]     r_dividend;
   reg  [P_GID_FACTORS_MSB:0]     r_divisor;
-  reg  [L_GID_MUL_FACTORS_MSB:0] r_multiplicand;
-  reg  [L_GID_MUL_FACTORS_MSB:0] r_multiplier;
   reg                            r_calculate_remainder;
   reg                            r_signed_extend;
+  //
+  reg  [L_GID_MUL_FACTORS_MSB:0] r_multiplicand;
+  reg  [L_GID_MUL_FACTORS_MSB:0] r_multiplier;
+  reg  [((P_GID_FACTORS_MSB+1)*4)-1:0] r_product;
+  wire [((P_GID_FACTORS_MSB+1)*4)-1:0] w_product;
   // Turn negative to positive is signed division
   wire [P_GID_FACTORS_MSB:0] w_dividend = (i_slave_tga[0]==1'b0 && i_master_div0_read_data[P_GID_FACTORS_MSB]==1'b1) ? ~i_master_div0_read_data : i_master_div0_read_data;
   wire [P_GID_FACTORS_MSB:0] w_divisor  = (i_slave_tga[0]==1'b0 && i_master_div1_read_data[P_GID_FACTORS_MSB]==1'b1) ? ~i_master_div1_read_data : i_master_div1_read_data;
   // Iterative operation signals
-  wire [L_GID_MUL_FACTORS_MSB:0] w_current_divisor   = r_divider_state==S_HALF_STEP_TWO ? r_multiplicand : i_product[L_GID_STEP_PRODUCT_MSB:P_GID_FACTORS_MSB+1];
+  wire [L_GID_MUL_FACTORS_MSB:0] w_current_divisor   = r_divider_state==S_HALF_STEP_TWO ? r_multiplicand : w_product[L_GID_STEP_PRODUCT_MSB:P_GID_FACTORS_MSB+1];
   wire [L_GID_MUL_FACTORS_MSB:0] w_two_minus_divisor = (w_number_two_extended + ~w_current_divisor); // 2-divisor
   wire                           w_converged         = &r_multiplicand[P_GID_FACTORS_MSB:P_GID_FACTORS_MSB-P_GID_ACCURACY_LVL]; // is it 0.9xxx...?
   reg                            r_converged;
   // Result Registers Write Signals
-  wire w_rounder = i_product[L_GID_RESULT_LSB-1] & (&i_product[(L_GID_RESULT_LSB-3):L_GID_ROUND_LSB]);
+  wire                       w_rounder   = &w_product[(L_GID_RESULT_LSB-1):L_GID_ROUND_LSB];
   wire [P_GID_FACTORS_MSB:0] w_quotient  = r_converged==1'b0 ? r_dividend : 
-                                             w_rounder==1'b1 ? (i_product[L_GID_RESULT_MSB:L_GID_RESULT_LSB]+1) :
-                                             i_product[L_GID_RESULT_MSB:L_GID_RESULT_LSB];
+                                             w_rounder==1'b1 ? (w_product[L_GID_RESULT_MSB:L_GID_RESULT_LSB]+1) :
+                                             w_product[L_GID_RESULT_MSB:L_GID_RESULT_LSB];
 
   wire [P_GID_FACTORS_MSB:0] w_remainder = r_converged==1'b0 ? r_divisor :
-                                             w_rounder==1'b1 ? (i_product[L_GID_RESULT_MSB:L_GID_RESULT_LSB]+1) :
-                                             i_product[L_GID_RESULT_MSB:L_GID_RESULT_LSB];
+                                             w_rounder==1'b1 ? (w_product[L_GID_RESULT_MSB:L_GID_RESULT_LSB]+1) :
+                                             w_product[L_GID_RESULT_MSB:L_GID_RESULT_LSB];
   wire [P_GID_FACTORS_MSB:0] w_result    = r_calculate_remainder==1'b1 ? ((r_converged==1'b1 && r_signed_extend==1'b1) ? ~w_remainder : w_remainder) :
-                                                                         ((r_converged==1'b1 && r_signed_extend==1'b1) ? ~w_quotient : w_quotient);
+                                                                         ((r_converged==1'b1 && r_signed_extend==1'b1) ? ~w_quotient  : w_quotient);
   reg                        r_div_write_stb;
+  // WB Control signals
+  reg [P_GID_ADDR_MSB:0] r_addr;    
 
   ///////////////////////////////////////////////////////////////////////////////
   //            ********      Architecture Declaration      ********           //
   ///////////////////////////////////////////////////////////////////////////////
-
-  ///////////////////////////////////////////////////////////////////////////////
-  // Process     : Decimal Offset Detect
-  // Description : Count until the hot bit is detected to determine which value
-  //               from the lookup table to get.
-  ///////////////////////////////////////////////////////////////////////////////
-  always @(posedge i_clk) begin
-    if (i_reset_sync == 1'b1) begin
-      r_lut_value <= L_REG_E1000000000;
-    end
-    else if (i_slave_stb == 1'b1) begin
-      // Detect how many position to shift the decimal point for divisor to be 
-      // less than 2.
-      if (w_divisor < 20) begin
-        // from 2 to 19, use 0.1
-        r_lut_value <= L_REG_E10;
-      end
-      else if (w_divisor < 200) begin
-        // from 20 to 199, use 0.01
-        r_lut_value <= L_REG_E100;
-      end
-      else if (w_divisor < 2000) begin
-        // from 200 to 1999, use 0.001
-        r_lut_value <= L_REG_E1000;
-      end
-      else if (w_divisor < 20000) begin
-        // from 2000 to 19999, use 0.0001
-        r_lut_value <= L_REG_E10000;
-      end
-      else if (w_divisor < 200000) begin
-        // from 20000 to 199999, use 0.00001
-        r_lut_value <= L_REG_E100000;
-      end
-      else if (w_divisor < 2000000) begin
-        // from 200000 to 1999999, use 0.000001
-        r_lut_value <= L_REG_E1000000;
-      end
-      else if (w_divisor < 20000000) begin
-        // from 2000000 to 19999999, use 0.0000001
-        r_lut_value <= L_REG_E10000000;
-      end
-      else if (w_divisor < 200000000) begin
-        // from 20000000 to 199999999, use 0.00000001
-        r_lut_value <= L_REG_E100000000;
-      end
-      else begin
-        // from 200000000 or higher, use 0.000000001
-        r_lut_value <= L_REG_E1000000000;
-      end
-    end
-  end
 
   ///////////////////////////////////////////////////////////////////////////////
   // Process     : Divider Accumulator
@@ -273,25 +234,24 @@ module Goldschmidt_Integer_Divider_2CPS #(
                 // 
                 r_signed_extend <= 1'b0;
               end
+              //
+              r_dividend  <= w_dividend;
+              r_divisor   <= w_divisor;
+              // 
+              r_multiplicand  <= {w_divisor, L_GID_ZERO_FILLER};
+              r_multiplier    <= {L_GID_ZERO_FILLER, w_lut_value};
+              // 
               r_div_write_stb <= 1'b0;
-              r_dividend      <= w_dividend;
-              r_divisor       <= w_divisor;
-              r_divider_state <= S_SHIFT_DIVISOR_POINT;
+              r_divider_state <= S_SHIFT_DIVIDEND_POINT;
             end
             r_calculate_remainder <= i_slave_tga[1];
           end
           else begin
             //
-            r_div_write_stb       <= 1'b0;
-            r_divider_state       <= S_IDLE;
+            r_div_write_stb <= 1'b0;
+            r_divider_state <= S_IDLE;
           end
           r_converged <= 1'b0;
-        end
-        S_SHIFT_DIVISOR_POINT : begin
-          // 
-          r_multiplicand  <= {r_divisor, L_GID_ZERO_FILLER};
-          r_multiplier    <= {L_GID_ZERO_FILLER, r_lut_value};
-          r_divider_state <= S_SHIFT_DIVIDEND_POINT;
         end
         S_SHIFT_DIVIDEND_POINT : begin
           // 
@@ -309,7 +269,7 @@ module Goldschmidt_Integer_Divider_2CPS #(
           end
           else begin
             // Increase count and start another division whole step.
-            r_multiplicand  <= i_product[L_GID_STEP_PRODUCT_MSB:P_GID_FACTORS_MSB+1];
+            r_multiplicand  <= w_product[L_GID_STEP_PRODUCT_MSB:P_GID_FACTORS_MSB+1];
             r_multiplier    <= w_two_minus_divisor;
             r_divider_state <= S_HALF_STEP_TWO;
           end
@@ -317,16 +277,19 @@ module Goldschmidt_Integer_Divider_2CPS #(
         S_HALF_STEP_TWO : begin
           if (w_converged == 1'b1 && r_calculate_remainder == 1'b1) begin
             // Convert the remainder from decimal fraction to a natural number
-            r_multiplicand  <= (i_product[L_GID_RESULT_LSB-1] & (&i_product[(L_GID_RESULT_LSB-3):L_GID_RESULT_LSB-5]) ? 
-                                 {L_GID_ZERO_FILLER, L_GID_ZERO_FILLER} :
-                                 {L_GID_ZERO_FILLER, i_product[L_GID_MUL_FACTORS_MSB:P_GID_FACTORS_MSB+1]});
+            if (w_rounder == 1'b1) begin
+              r_multiplicand  <= {L_GID_ZERO_FILLER, L_GID_ZERO_FILLER};
+            end
+            else begin
+              r_multiplicand <= {L_GID_ZERO_FILLER, w_product[L_GID_RESULT_LSB-1:P_GID_FACTORS_MSB+1]};
+            end
             r_multiplier    <= {r_divisor, L_GID_ZERO_FILLER};
             r_converged     <= 1'b1;
             r_divider_state <= S_REMAINDER_TO_NATURAL;
           end
           else begin
             // Second half of the division step
-            r_multiplicand  <= i_product[L_GID_STEP_PRODUCT_MSB:P_GID_FACTORS_MSB+1];
+            r_multiplicand  <= w_product[L_GID_STEP_PRODUCT_MSB:P_GID_FACTORS_MSB+1];
             r_multiplier    <= w_two_minus_divisor;
             r_converged     <= w_converged;
             r_divider_state <= S_HALF_STEP_ONE;
@@ -345,12 +308,76 @@ module Goldschmidt_Integer_Divider_2CPS #(
       endcase
     end
   end
-  // Result Registers Write Access
+
+  ///////////////////////////////////////////////////////////////////////////////
+  // Process     : WB Control Process
+  // Description : Controls the access to the multiplier
+  ///////////////////////////////////////////////////////////////////////////////
+  always @(posedge i_clk) begin
+    if (i_reset_sync == 1'b1) begin
+      r_addr     <= 'h0;
+    end
+    else begin
+      if (i_slave_stb == 1'b1 && r_divider_state == S_IDLE) begin
+        r_addr <= i_slave_addr;
+      end
+    end
+  end
+  // WB(pipeline) Master Write access control
+  assign o_master_div_write_stb  = r_div_write_stb;
+  assign o_master_div_write_addr = r_addr;
   assign o_master_div_write_data = w_result;
-  // Multiplication Processor Access
-  assign o_multiplicand = r_multiplicand;
-  assign o_multiplier   = r_multiplier;
-  // WB Valid/Ready 
-  assign o_slave_ack = r_div_write_stb;
+
+
+  generate
+    if (P_GID_ANLOGIC_MUL == 0) begin
+      /////////////////////////////////////////////////////////////////////////////
+      // Process     : Multiplication Process
+      // Description : This is a generic code, generally inferred as a DSPs block
+      //               by modern synthesis tools.
+      /////////////////////////////////////////////////////////////////////////////
+      always @(posedge i_clk) begin
+        if (i_reset_sync == 1'b1) begin
+          r_product <= 128'h0;
+        end
+        else begin
+          //	Multiply any time the inputs changes.
+          r_product <= $signed(r_multiplicand) * $signed(r_multiplier);
+        end
+      end
+      assign w_product = r_product;
+    end
+  endgenerate
+
+  generate
+    if (P_GID_ANLOGIC_MUL == 1) begin
+      ///////////////////////////////////////////////////////////////////////////////
+      // Instance    : Integer_Multiplier
+      // Description : Anlogic IP EG_LOGIC_MULT, TD version 4.6.18154
+      ///////////////////////////////////////////////////////////////////////////////
+	    EG_LOGIC_MULT #(
+        .INPUT_WIDTH_A(L_GID_MUL_FACTORS_MSB+1),
+	      .INPUT_WIDTH_B(L_GID_MUL_FACTORS_MSB+1),
+	      .OUTPUT_WIDTH((P_GID_FACTORS_MSB+1)*4),
+	      .INPUTFORMAT("SIGNED"),
+	      .INPUTREGA("DISABLE"),
+	      .INPUTREGB("DISABLE"),
+	      .OUTPUTREG("ENABLE"),
+	      .IMPLEMENT("DSP"),
+	      .SRMODE("ASYNC")
+	    ) Integer_Multiplier (
+	      .a(r_multiplicand),
+	      .b(r_multiplier),
+	      .p(w_product),
+	      .cea(1'b0),
+	      .ceb(1'b0),
+	      .cepd(1'b1),
+	      .clk(i_clk),
+	      .rstan(1'b0),
+	      .rstbn(1'b0),
+	      .rstpdn(~i_reset_sync)
+	    );
+    end
+  endgenerate
 
 endmodule // Goldschmidt_Integer_Divider_2CPS
