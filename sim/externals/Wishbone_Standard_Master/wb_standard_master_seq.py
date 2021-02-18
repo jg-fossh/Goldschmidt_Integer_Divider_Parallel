@@ -33,7 +33,7 @@
 # File name     : wb_standard_master_seq.py
 # Author        : Jose R Garcia
 # Created       : 2020/11/22 10:24:13
-# Last modified : 2021/01/10 11:41:01
+# Last modified : 2021/02/18 19:26:57
 # Project Name  : UVM Python Verification Library
 # Module Name   : wb_standard_master_seq, wb_standard_master_base_sequence
 # Description   : Wishbone Bus Sequence Item and Sequences.
@@ -57,6 +57,14 @@ class wb_standard_master_seq(UVMSequenceItem):
         self.response_data_tag = 0 
         self.acknowledge       = 1
         self.transmit_delay    = 0 
+        self.address           = 0
+        self.data_out          = 0
+        self.select            = 0
+        self.cycle             = 0
+        self.strobe            = 0
+        self.address_tag       = 0
+        self.cycle_tag         = 0
+        self.data_tag          = 0
         
 
     def do_copy(self, rhs):
@@ -65,6 +73,14 @@ class wb_standard_master_seq(UVMSequenceItem):
         self.response_data_tag = rhs.response_data_tag
         self.acknowledge       = rhs.acknowledge
         self.transmit_delay    = rhs.transmit_delay
+        self.address           = rhs.address    
+        self.data_out          = rhs.data_out   
+        self.select            = rhs.select     
+        self.cycle             = rhs.cycle      
+        self.strobe            = rhs.strobe     
+        self.address_tag       = rhs.address_tag
+        self.cycle_tag         = rhs.cycle_tag  
+        self.data_tag          = rhs.data_tag   
 
 
     def do_clone(self):
@@ -74,8 +90,24 @@ class wb_standard_master_seq(UVMSequenceItem):
 
 
     def convert2string(self):
-        return sv.sformatf("\n =================================== \n    ACK_i : %d \n    TDG_i : 0x%0h \n   DATA_i : 0x%0h \n    Delay : %d  clocks \n =================================== \n ",
-                self.acknowledge, self.response_data_tag, self.data_in, self.transmit_delay)
+        return sv.sformatf("\n =================================== \n" + 
+                           "       ADDR_O : 0x%0h      \n" +
+                           "        ACK_i : %d         \n" + 
+                           "        TDG_i : 0x%0h      \n" +
+                           "       DATA_i : 0x%0h      \n" +
+                           "        Delay : %d  clocks \n" +
+                           "       DATA_O : 0x%0h      \n" + 
+                           "     SELECT_O : 0x%0h      \n" + 
+                           "        CYC_O : %d         \n" + 
+                           "       STRB_O : %d         \n" + 
+                           "        TGA_O : %d         \n" + 
+                           "        TCY_O : %d         \n" + 
+                           "        TDA_O : %d         \n" + 
+                           " =================================== \n ",
+                self.address, self.acknowledge, self.response_data_tag, 
+                self.data_in, self.transmit_delay, self.data_out, 
+                self.select, self.cycle, self.strobe, self.address_tag, 
+                self.cycle_tag, self.data_tag)
 
 
 uvm_object_utils(wb_standard_master_seq)

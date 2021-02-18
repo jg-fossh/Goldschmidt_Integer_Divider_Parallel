@@ -20,7 +20,8 @@ async def initial_run_test(dut, vif_master, vif_slave):
     cs_ = UVMCoreService.get()
     UVMConfigDb.set(None, "*", "vif_master", vif_master)
     UVMConfigDb.set(None, "*", "vif_slave", vif_slave)
-    await run_test("reg_test")
+    # await run_test("reg_test")
+    await run_test()
 
 
 async def initial_reset(vif_master, vif_slave, dut):

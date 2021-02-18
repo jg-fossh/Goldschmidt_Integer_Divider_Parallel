@@ -33,7 +33,7 @@
 # File name     : wb_standard_master_monitor.py
 # Author        : Jose R Garcia
 # Created       : 2020/11/05 20:08:35
-# Last modified : 2021/01/10 11:40:57
+# Last modified : 2021/02/18 19:33:24
 # Project Name  : UVM Python Verification Library
 # Module Name   : wb_standard_master_monitor
 # Description   : Wishbone Master Monitor.
@@ -104,11 +104,11 @@ class wb_standard_master_monitor(UVMMonitor):
         while True:
             tr = None  # Clean transaction for every loop.
             # Create sequence item for this transaction.
-            tr = wb_standard_master_seq.type_id.create("tr", self)
             
             await RisingEdge(self.vif.clk_i)
             
             if (self.vif.stb_o == 1):
+                tr = wb_standard_master_seq.type_id.create("tr", self)
                 # Load signals values into sequence item to describe the transaction
                 tr.address     = self.vif.adr_o.value.integer
                 tr.data_out    = self.vif.dat_o.value.integer
@@ -119,8 +119,9 @@ class wb_standard_master_monitor(UVMMonitor):
                 tr.data_tag    = self.vif.tgd_o.value.integer
                 tr.cycle_tag   = self.vif.tgc_o.value.integer
                 
-                #await self.wait_for_ack() # Wait for response
-                await RisingEdge(self.vif.ack_i)
+                # uvm_info(self.tag, tr.convert2string(), UVM_LOW)
+                await self.wait_for_ack() # Wait for response
+                #await RisingEdge(self.vif.ack_i)
 
                 self.num_items += 1       # Increment transactions count
                 # Load response values into sequence item to describe the transaction
@@ -130,7 +131,7 @@ class wb_standard_master_monitor(UVMMonitor):
                 tr.acknowledge       = self.vif.ack_i.value.integer
 
                 self.ap.write(tr) # Send transaction through analysis port
-                uvm_info(self.tag, tr.convert2string(), UVM_FULL)
+                uvm_info(self.tag, tr.convert2string(), UVM_HIGH)
 
 
     async def wait_for_ack(self):

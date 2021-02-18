@@ -33,7 +33,7 @@
 # File name     : predictor.py
 # Author        : Jose R Garcia
 # Created       : 2020/11/05 20:08:35
-# Last modified : 2021/02/16 09:30:23
+# Last modified : 2021/02/18 15:52:51
 # Project Name  : ORCs
 # Module Name   : predictor
 # Description   : Non Time Consuming R32I model.
@@ -97,12 +97,16 @@ class predictor(UVMSubscriber):
            Args:
              t: wb_standard_master_seq (Sequence Item)
         """
-        # uvm_info(self.tag, sv.sformatf("\n    OPCODE:  %d\n", self.opcode), UVM_LOW)
+        dividend = t.data_in - 4294967295
+        divisor  = 4294967295 - t.data_in
+        result = dividend/divisor
 
-        #self.create_response(t/t)
+        uvm_info(self.tag, sv.sformatf("\n    DIV Result:  %d\n", result), UVM_LOW)
+
+        self.create_response(result)
 
    
-    def create_response(self, t):
+    def create_response(self, result):
         """         
            Function: create_response
           
@@ -112,8 +116,15 @@ class predictor(UVMSubscriber):
              t: wb_standard_master_seq (Sequence Item)
         """
 
+        write_seq0 = wb_slave_write_single_sequence("write_seq0")
+        write_seq0.data_in           = result
+        write_seq0.stall             = 0 
+        write_seq0.response_data_tag = 0 
+        write_seq0.acknowledge       = 1
+        write_seq0.transmit_delay    = 0 
+        
         tr = []
-        tr = t
+        tr = write_seq0
         self.ap.write(tr)
  
 

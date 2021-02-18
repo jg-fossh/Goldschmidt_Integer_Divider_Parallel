@@ -33,7 +33,7 @@
 # File name     : wb_standard_slave_sequencer.py
 # Author        : Jose R Garcia
 # Created       : 2020/11/05 20:11:12
-# Last modified : 2021/01/10 11:43:00
+# Last modified : 2021/02/18 14:50:38
 # Project Name  : UVM-Python Verification Library
 # Module Name   : wb_standard_slave_sequencer
 # Description   : Wishbone Master Sequencer.

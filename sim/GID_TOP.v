@@ -33,7 +33,7 @@
 // File name     : GID_TOP.v
 // Author        : Jose R Garcia
 // Created       : 2020/11/04 23:20:43
-// Last modified : 2021/02/16 15:11:13
+// Last modified : 2021/02/18 19:29:28
 // Project Name  : IIR Filter
 // Module Name   : GID_TOP
 // Description   : The GID_TOP is a wrapper to include the missing signals
@@ -68,7 +68,7 @@ module GID_TOP #(
   output [P_GID_FACTORS_MSB:0] dat_o,   // Added to stub connections
   output [P_GID_FACTORS_MSB:0] dat_i,   // Added to stub connections
   output                       we_o,    // Added to stub connections
-  input                        ack_i,   // Added to stub connections
+  output                       ack_i,   // Added to stub connections
   output                       sel_o,   // Added to stub connections
   output                       cyc_o,   // Added to stub connections
   input                        stall_i, // Added to stub connections
@@ -117,6 +117,7 @@ module GID_TOP #(
     .o_master_div_write_data(o_master_div_write_data)  // WB data
   );
 
+assign ack_i = 1;
 assign adr_o = 0;
 assign we_o  = 0;
 assign sel_o = 0;
