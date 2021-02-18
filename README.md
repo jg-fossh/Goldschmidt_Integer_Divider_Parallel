@@ -55,13 +55,12 @@ WB          | Wishbone Interface
 ## 2 Design
 
 The Goldschmidt division is an special application of the Newton-Raphson method. This iterative divider computes:
-$$
-  d(i) = d[i-1].(2-d[i-1])
-$$
-$$
-  D(i) = D[i-1].(2-d[i-1])
-$$
-were 'd' is the divisor; 'D' is the dividend; 'i' is the step. D converges toward the quotient and d converges toward 1 at a quadratic rate. For the divisor to converge to 1 it must obviously be less than 2 therefore integers greater than 2 must be multiplied by 10 to the negative powers to shift the decimal point. Consider the following example:
+
+![\[d(i) = d[i-1].(2-d[i-1])\]](https://latex.codecogs.com/gif.latex?\inline&space;\bg_white&space;\large&space;d(i)&space;=&space;d[i-1].(2-d[i-1]))
+
+![\D(i) = D[i-1].(2-d[i-1])](https://latex.codecogs.com/gif.latex?\inline&space;\bg_white&space;\large&space;D(i)&space;=&space;D[i-1].(2-d[i-1]))
+
+were '_d_' is the divisor; '_D_' is the dividend; '_i_' is the step. _D_ converges toward the quotient and d converges toward 1 at a quadratic rate. For the divisor to converge to 1 it must obviously be less than 2 therefore integers greater than 2 must be multiplied by 10 to the negative powers to shift the decimal point. Consider the following example:
 
 Step  | D                | d                 | 2-d
 ----: | :--------------- | :---------------- | :---------------
