@@ -1,0 +1,42 @@
+  CREATE_STREAM @330.084 [NAME:slave_seq0 T:Transactions SCOPE:uvm_test_top.tb_env.inst_agent.sqr STREAM:1126]
+  CREATE_STREAM @330.084 [NAME:slave_seq0 T: SCOPE:uvm_test_top.tb_env.inst_agent.sqr STREAM:1128]
+    OPEN_RECORDER @330.084 {TXH:1130 STREAM:1128 NAME:slave_seq0 TIME:330.084 TYPE="Begin_No_Parent, Link"}
+  CREATE_STREAM @330.084 [NAME:mem_read_seq0 T:Transactions SCOPE:uvm_test_top.tb_env.mem_read_agent.sqr STREAM:1156]
+  CREATE_STREAM @330.084 [NAME:mem_read_seq0 T: SCOPE:uvm_test_top.tb_env.mem_read_agent.sqr STREAM:1158]
+    OPEN_RECORDER @330.084 {TXH:1160 STREAM:1158 NAME:mem_read_seq0 TIME:330.084 TYPE="Begin_No_Parent, Link"}
+  CREATE_STREAM @330.084 [NAME:mem_write_seq0 T:Transactions SCOPE:uvm_test_top.tb_env.mem_write_agent.sqr STREAM:1186]
+  CREATE_STREAM @330.084 [NAME:mem_write_seq0 T: SCOPE:uvm_test_top.tb_env.mem_write_agent.sqr STREAM:1188]
+    OPEN_RECORDER @330.084 {TXH:1190 STREAM:1188 NAME:mem_write_seq0 TIME:330.084 TYPE="Begin_No_Parent, Link"}
+  CREATE_STREAM @33.078 [NAME:slave_seq0 T:Transactions SCOPE:uvm_test_top.tb_env.wb_master_agent.sqr STREAM:953]
+  CREATE_STREAM @33.078 [NAME:slave_seq0 T: SCOPE:uvm_test_top.tb_env.wb_master_agent.sqr STREAM:955]
+    OPEN_RECORDER @33.078 {TXH:957 STREAM:955 NAME:slave_seq0 TIME:33.078 TYPE="Begin_No_Parent, Link"}
+  CREATE_STREAM @33.078 [NAME:mem_read_seq0 T:Transactions SCOPE:uvm_test_top.tb_env.wb_slave_agent.sqr STREAM:983]
+  CREATE_STREAM @33.078 [NAME:mem_read_seq0 T: SCOPE:uvm_test_top.tb_env.wb_slave_agent.sqr STREAM:985]
+    OPEN_RECORDER @33.078 {TXH:987 STREAM:985 NAME:mem_read_seq0 TIME:33.078 TYPE="Begin_No_Parent, Link"}
+  CREATE_STREAM @33.075 [NAME:slave_seq0 T:Transactions SCOPE:uvm_test_top.tb_env.wb_master_agent.sqr STREAM:953]
+  CREATE_STREAM @33.075 [NAME:slave_seq0 T: SCOPE:uvm_test_top.tb_env.wb_master_agent.sqr STREAM:955]
+    OPEN_RECORDER @33.075 {TXH:957 STREAM:955 NAME:slave_seq0 TIME:33.075 TYPE="Begin_No_Parent, Link"}
+  CREATE_STREAM @33.075 [NAME:mem_read_seq0 T:Transactions SCOPE:uvm_test_top.tb_env.wb_slave_agent.sqr STREAM:983]
+  CREATE_STREAM @33.075 [NAME:mem_read_seq0 T: SCOPE:uvm_test_top.tb_env.wb_slave_agent.sqr STREAM:985]
+    OPEN_RECORDER @33.075 {TXH:987 STREAM:985 NAME:mem_read_seq0 TIME:33.075 TYPE="Begin_No_Parent, Link"}
+  CREATE_STREAM @33.076 [NAME:slave_seq0 T:Transactions SCOPE:uvm_test_top.tb_env.wb_master_agent.sqr STREAM:953]
+  CREATE_STREAM @33.076 [NAME:slave_seq0 T: SCOPE:uvm_test_top.tb_env.wb_master_agent.sqr STREAM:955]
+    OPEN_RECORDER @33.076 {TXH:957 STREAM:955 NAME:slave_seq0 TIME:33.076 TYPE="Begin_No_Parent, Link"}
+  CREATE_STREAM @33.001 [NAME:mem_read_seq0 T:Transactions SCOPE:uvm_test_top.tb_env.wb_slave_agent.sqr STREAM:790]
+  CREATE_STREAM @33.001 [NAME:mem_read_seq0 T: SCOPE:uvm_test_top.tb_env.wb_slave_agent.sqr STREAM:792]
+    OPEN_RECORDER @33.001 {TXH:794 STREAM:792 NAME:mem_read_seq0 TIME:33.001 TYPE="Begin_No_Parent, Link"}
+  CREATE_STREAM @33.001 [NAME:mem_read_seq0 T:Transactions SCOPE:uvm_test_top.tb_env.wb_slave_agent.sqr STREAM:790]
+  CREATE_STREAM @33.001 [NAME:mem_read_seq0 T: SCOPE:uvm_test_top.tb_env.wb_slave_agent.sqr STREAM:792]
+    OPEN_RECORDER @33.001 {TXH:794 STREAM:792 NAME:mem_read_seq0 TIME:33.001 TYPE="Begin_No_Parent, Link"}
+  CREATE_STREAM @33.001 [NAME:mem_read_seq0 T:Transactions SCOPE:uvm_test_top.tb_env.wb_slave_agent.sqr STREAM:790]
+  CREATE_STREAM @33.001 [NAME:mem_read_seq0 T: SCOPE:uvm_test_top.tb_env.wb_slave_agent.sqr STREAM:792]
+    OPEN_RECORDER @33.001 {TXH:794 STREAM:792 NAME:mem_read_seq0 TIME:33.001 TYPE="Begin_No_Parent, Link"}
+  CREATE_STREAM @33.001 [NAME:mem_read_seq0 T:Transactions SCOPE:uvm_test_top.tb_env.wb_slave_agent.sqr STREAM:790]
+  CREATE_STREAM @33.001 [NAME:mem_read_seq0 T: SCOPE:uvm_test_top.tb_env.wb_slave_agent.sqr STREAM:792]
+    OPEN_RECORDER @33.001 {TXH:794 STREAM:792 NAME:mem_read_seq0 TIME:33.001 TYPE="Begin_No_Parent, Link"}
+  CREATE_STREAM @33.001 [NAME:mem_read_seq0 T:Transactions SCOPE:uvm_test_top.tb_env.wb_slave_agent.sqr STREAM:790]
+  CREATE_STREAM @33.001 [NAME:mem_read_seq0 T: SCOPE:uvm_test_top.tb_env.wb_slave_agent.sqr STREAM:792]
+    OPEN_RECORDER @33.001 {TXH:794 STREAM:792 NAME:mem_read_seq0 TIME:33.001 TYPE="Begin_No_Parent, Link"}
+  CREATE_STREAM @33.001 [NAME:mem_read_seq0 T:Transactions SCOPE:uvm_test_top.tb_env.wb_slave_agent.sqr STREAM:790]
+  CREATE_STREAM @33.001 [NAME:mem_read_seq0 T: SCOPE:uvm_test_top.tb_env.wb_slave_agent.sqr STREAM:792]
+    OPEN_RECORDER @33.001 {TXH:794 STREAM:792 NAME:mem_read_seq0 TIME:33.001 TYPE="Begin_No_Parent, Link"}

@@ -1,0 +1,138 @@
+standard
+***Report Model: Goldschmidt_Integer_Divider_2CPS***
+
+IO Statistics
+#IO                   106
+  #input               71
+  #output              35
+  #inout                0
+
+Utilization Statistics
+#lut                 1300   out of  19600    6.63%
+#reg                  262   out of  19600    1.34%
+#le                  1300
+  #lut only          1038   out of   1300   79.85%
+  #reg only             0   out of   1300    0.00%
+  #lut&reg            262   out of   1300   20.15%
+#dsp                   15   out of     29   51.72%
+#bram                   0   out of     64    0.00%
+  #bram9k               0
+  #fifo9k               0
+#bram32k                0   out of     16    0.00%
+#pad                   82   out of    188   43.62%
+  #ireg                 3
+  #oreg                 0
+  #treg                 0
+#pll                    0   out of      4    0.00%
+
+
+Detailed IO Report
+
+Name                            Direction     Location     IOStandard     DriveStrength     PackReg                  
+i_clk                           INPUT         F9           LVCMOS25       N/A               NONE                     
+i_master_div0_read_data[31]     INPUT         S41          LVCMOS25       N/A               NONE                     
+i_master_div0_read_data[30]     INPUT         S35          LVCMOS25       N/A               NONE                     
+i_master_div0_read_data[29]     INPUT         F13          LVCMOS25       N/A               NONE                     
+i_master_div0_read_data[28]     INPUT         B15          LVCMOS25       N/A               NONE                     
+i_master_div0_read_data[27]     INPUT         C4           LVCMOS25       N/A               NONE                     
+i_master_div0_read_data[26]     INPUT         C1           LVCMOS25       N/A               NONE                     
+i_master_div0_read_data[25]     INPUT         M15          LVCMOS25       N/A               NONE                     
+i_master_div0_read_data[24]     INPUT         R16          LVCMOS25       N/A               NONE                     
+i_master_div0_read_data[23]     INPUT         J6           LVCMOS25       N/A               NONE                     
+i_master_div0_read_data[22]     INPUT         M7           LVCMOS25       N/A               NONE                     
+i_master_div0_read_data[21]     INPUT         S18          LVCMOS25       N/A               NONE                     
+i_master_div0_read_data[20]     INPUT         F16          LVCMOS25       N/A               NONE                     
+i_master_div0_read_data[19]     INPUT         S31          LVCMOS25       N/A               NONE                     
+i_master_div0_read_data[18]     INPUT         C5           LVCMOS25       N/A               NONE                     
+i_master_div0_read_data[17]     INPUT         E2           LVCMOS25       N/A               NONE                     
+i_master_div0_read_data[16]     INPUT         S12          LVCMOS25       N/A               NONE                     
+i_master_div0_read_data[15]     INPUT         M1           LVCMOS25       N/A               NONE                     
+i_master_div0_read_data[14]     INPUT         M6           LVCMOS25       N/A               NONE                     
+i_master_div0_read_data[13]     INPUT         S76          LVCMOS25       N/A               NONE                     
+i_master_div0_read_data[12]     INPUT         D12          LVCMOS25       N/A               NONE                     
+i_master_div0_read_data[11]     INPUT         A8           LVCMOS25       N/A               NONE                     
+i_master_div0_read_data[10]     INPUT         D1           LVCMOS25       N/A               NONE                     
+i_master_div0_read_data[9]      INPUT         M11          LVCMOS25       N/A               NONE                     
+i_master_div0_read_data[8]      INPUT         R9           LVCMOS25       N/A               NONE                     
+i_master_div0_read_data[7]      INPUT         E8           LVCMOS25       N/A               NONE                     
+i_master_div0_read_data[6]      INPUT         S36          LVCMOS25       N/A               NONE                     
+i_master_div0_read_data[5]      INPUT         A7           LVCMOS25       N/A               NONE                     
+i_master_div0_read_data[4]      INPUT         F1           LVCMOS25       N/A               NONE                     
+i_master_div0_read_data[3]      INPUT         L10          LVCMOS25       N/A               NONE                     
+i_master_div0_read_data[2]      INPUT         N6           LVCMOS25       N/A               NONE                     
+i_master_div0_read_data[1]      INPUT         S42          LVCMOS25       N/A               NONE                     
+i_master_div0_read_data[0]      INPUT         H13          LVCMOS25       N/A               NONE                     
+i_master_div1_read_data[31]     INPUT         S55          LVCMOS25       N/A               NONE                     
+i_master_div1_read_data[30]     INPUT         N12          LVCMOS25       N/A               NONE                     
+i_master_div1_read_data[29]     INPUT         N5           LVCMOS25       N/A               NONE                     
+i_master_div1_read_data[28]     INPUT         E16          LVCMOS25       N/A               NONE                     
+i_master_div1_read_data[27]     INPUT         A13          LVCMOS25       N/A               NONE                     
+i_master_div1_read_data[26]     INPUT         S68          LVCMOS25       N/A               NONE                     
+i_master_div1_read_data[25]     INPUT         S85          LVCMOS25       N/A               NONE                     
+i_master_div1_read_data[24]     INPUT         J12          LVCMOS25       N/A               NONE                     
+i_master_div1_read_data[23]     INPUT         S28          LVCMOS25       N/A               NONE                     
+i_master_div1_read_data[22]     INPUT         E1           LVCMOS25       N/A               NONE                     
+i_master_div1_read_data[21]     INPUT         R12          LVCMOS25       N/A               NONE                     
+i_master_div1_read_data[20]     INPUT         A10          LVCMOS25       N/A               NONE                     
+i_master_div1_read_data[19]     INPUT         S32          LVCMOS25       N/A               NONE                     
+i_master_div1_read_data[18]     INPUT         F3           LVCMOS25       N/A               NONE                     
+i_master_div1_read_data[17]     INPUT         J1           LVCMOS25       N/A               NONE                     
+i_master_div1_read_data[16]     INPUT         S19          LVCMOS25       N/A               NONE                     
+i_master_div1_read_data[15]     INPUT         N14          LVCMOS25       N/A               NONE                     
+i_master_div1_read_data[14]     INPUT         S65          LVCMOS25       N/A               NONE                     
+i_master_div1_read_data[13]     INPUT         P9           LVCMOS25       N/A               NONE                     
+i_master_div1_read_data[12]     INPUT         G16          LVCMOS25       N/A               NONE                     
+i_master_div1_read_data[11]     INPUT         F6           LVCMOS25       N/A               NONE                     
+i_master_div1_read_data[10]     INPUT         S2           LVCMOS25       N/A               NONE                     
+i_master_div1_read_data[9]      INPUT         D9           LVCMOS25       N/A               NONE                     
+i_master_div1_read_data[8]      INPUT         S26          LVCMOS25       N/A               NONE                     
+i_master_div1_read_data[7]      INPUT         H5           LVCMOS25       N/A               NONE                     
+i_master_div1_read_data[6]      INPUT         M3           LVCMOS25       N/A               NONE                     
+i_master_div1_read_data[5]      INPUT         G11          LVCMOS25       N/A               NONE                     
+i_master_div1_read_data[4]      INPUT         S59          LVCMOS25       N/A               NONE                     
+i_master_div1_read_data[3]      INPUT         T10          LVCMOS25       N/A               NONE                     
+i_master_div1_read_data[2]      INPUT         E12          LVCMOS25       N/A               NONE                     
+i_master_div1_read_data[1]      INPUT         F5           LVCMOS25       N/A               NONE                     
+i_master_div1_read_data[0]      INPUT         S84          LVCMOS25       N/A               NONE                     
+i_reset_sync                    INPUT         F12          LVCMOS25       N/A               NONE                     
+i_slave_addr[1]                 INPUT         R7           LVCMOS25       N/A               IREG                     
+i_slave_addr[0]                 INPUT         C8           LVCMOS25       N/A               IREG                     
+i_slave_stb                     INPUT         A2           LVCMOS25       N/A               NONE                     
+i_slave_tga[1]                  INPUT         M2           LVCMOS25       N/A               IREG                     
+i_slave_tga[0]                  INPUT         T15          LVCMOS25       N/A               NONE                     
+o_master_div_write_addr[1]      OUTPUT        D16          LVCMOS25       8                 NONE                     
+o_master_div_write_addr[0]      OUTPUT        S58          LVCMOS25       8                 NONE                     
+o_master_div_write_data[31]     OUTPUT        R2           LVCMOS25       8                 NONE                     
+o_master_div_write_data[30]     OUTPUT        B12          LVCMOS25       8                 NONE                     
+o_master_div_write_data[29]     OUTPUT        H1           LVCMOS25       8                 NONE                     
+o_master_div_write_data[28]     OUTPUT        P6           LVCMOS25       8                 NONE                     
+o_master_div_write_data[27]     OUTPUT        B14          LVCMOS25       8                 NONE                     
+o_master_div_write_data[26]     OUTPUT        M12          LVCMOS25       8                 NONE                     
+o_master_div_write_data[25]     OUTPUT        N9           LVCMOS25       8                 NONE                     
+o_master_div_write_data[24]     OUTPUT        S52          LVCMOS25       8                 NONE                     
+o_master_div_write_data[23]     OUTPUT        N8           LVCMOS25       8                 NONE                     
+o_master_div_write_data[22]     OUTPUT        G12          LVCMOS25       8                 NONE                     
+o_master_div_write_data[21]     OUTPUT        J11          LVCMOS25       8                 NONE                     
+o_master_div_write_data[20]     OUTPUT        K12          LVCMOS25       8                 NONE                     
+o_master_div_write_data[19]     OUTPUT        S49          LVCMOS25       8                 NONE                     
+o_master_div_write_data[18]     OUTPUT        R1           LVCMOS25       8                 NONE                     
+o_master_div_write_data[17]     OUTPUT        S29          LVCMOS25       8                 NONE                     
+o_master_div_write_data[16]     OUTPUT        L12          LVCMOS25       8                 NONE                     
+o_master_div_write_data[15]     OUTPUT        P7           LVCMOS25       8                 NONE                     
+o_master_div_write_data[14]     OUTPUT        F2           LVCMOS25       8                 NONE                     
+o_master_div_write_data[13]     OUTPUT        T4           LVCMOS25       8                 NONE                     
+o_master_div_write_data[12]     OUTPUT        B6           LVCMOS25       8                 NONE                     
+o_master_div_write_data[11]     OUTPUT        P10          LVCMOS25       8                 NONE                     
+o_master_div_write_data[10]     OUTPUT        G14          LVCMOS25       8                 NONE                     
+o_master_div_write_data[9]      OUTPUT        P12          LVCMOS25       8                 NONE                     
+o_master_div_write_data[8]      OUTPUT        D14          LVCMOS25       8                 NONE                     
+o_master_div_write_data[7]      OUTPUT        K15          LVCMOS25       8                 NONE                     
+o_master_div_write_data[6]      OUTPUT        J3           LVCMOS25       8                 NONE                     
+o_master_div_write_data[5]      OUTPUT        S64          LVCMOS25       8                 NONE                     
+o_master_div_write_data[4]      OUTPUT        A9           LVCMOS25       8                 NONE                     
+o_master_div_write_data[3]      OUTPUT        B2           LVCMOS25       8                 NONE                     
+o_master_div_write_data[2]      OUTPUT        P5           LVCMOS25       8                 NONE                     
+o_master_div_write_data[1]      OUTPUT        D6           LVCMOS25       8                 NONE                     
+o_master_div_write_data[0]      OUTPUT        P8           LVCMOS25       8                 NONE                     
+o_master_div_write_stb          OUTPUT        F7           LVCMOS25       8                 NONE                     
+
