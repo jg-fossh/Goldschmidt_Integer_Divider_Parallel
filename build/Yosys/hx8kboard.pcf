@@ -1,0 +1,4 @@
+# Clocks and reset
+set_io i_clk J3
+set_io i_reset_sync P16
+
