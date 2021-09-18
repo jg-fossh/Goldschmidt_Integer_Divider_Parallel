@@ -1,4 +1,4 @@
-#################################################################################
+##################################################################################################
 # BSD 3-Clause License
 # 
 # Copyright (c) 2020, Jose R. Garcia
@@ -29,28 +29,28 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-#################################################################################
+##################################################################################################
 # File name     : tb_env_config.py
 # Author        : Jose R Garcia
 # Created       : 2020/11/05 20:08:35
-# Last modified : 2021/02/16 09:39:43
-# Project Name  : UVM Python Verification Library
+# Last modified : 2021/06/15 19:00:57
+# Project Name  : Adder
 # Module Name   : tb_env_config
 # Description   : Test Bench Configurations
 #
 # Additional Comments:
 #
-#################################################################################
+##################################################################################################
 import cocotb
 from cocotb.triggers import *
 from uvm.tlm1 import *
 from uvm.macros import *
-from externals.Wishbone_Standard_Master.wb_standard_master_agent import *
-from externals.Wishbone_Standard_Master.wb_standard_master_config import *
-from externals.Wishbone_Standard_Master.wb_standard_master_seq import *
-from externals.Wishbone_Standard_Slave.wb_standard_slave_agent import *
-from externals.Wishbone_Standard_Slave.wb_standard_slave_config import *
-from externals.Wishbone_Standard_Slave.wb_standard_slave_seq import *
+from wb4_master_agent import *
+from wb4_master_config import *
+from wb4_master_seq import *
+from wb4_slave_agent import *
+from wb4_slave_config import *
+from wb4_slave_seq import *
 
 class tb_env_config(UVMEnv):
     """         
@@ -70,13 +70,16 @@ class tb_env_config(UVMEnv):
              name: This agents name.
              parent: NONE
         """
-        
-        self.wb_master_agent_cfg = wb_standard_master_config.type_id.create("wb_master_agent_cfg", self)
-        self.wb_slave_agent_cfg = wb_standard_slave_config.type_id.create("wb_slave_agent_cfg", self)
-
+        #
+        self.wb4_master_agent_cfg = wb4_master_config.type_id.create("wb4_master_agent_cfg", self)
+        self.wb4_slave_agent_cfg = wb4_slave_config.type_id.create("wb4_slave_agent_cfg", self)
+        #
         self.has_scoreboard = False           # scoreboard on/off
         self.has_predictor  = False           # predictor on/off
         self.has_functional_coverage = False  # predictor on/off
+        #
+        self.DUT_SLAVE_DATA_IN_LENGTH = 0
+        # 
         self.tag = "tb_env_config"
 
 
