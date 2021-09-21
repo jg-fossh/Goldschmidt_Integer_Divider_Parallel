@@ -103,7 +103,7 @@ module Goldschmidt_Integer_Divider #(
   function [P_GID_FACTORS_MSB:0] F_EE_LUT (
     input [P_GID_FACTORS_MSB:0] one_tength,
     input integer               nth_iteration
-  );    
+  );
     // This function's variables
     integer hh;
 
@@ -115,7 +115,7 @@ module Goldschmidt_Integer_Divider #(
           // Each entry is ten times smaller than the previous.
           F_EE_LUT = F_EE_LUT / 10;
         end
-      end      
+      end
     end
   endfunction // F_EE_LUT
 
@@ -135,7 +135,7 @@ module Goldschmidt_Integer_Divider #(
       for (kk = 1; kk <= ee; kk = kk+1) begin
         // Each entry is ten times smaller than the previous.
         F_TWO_EE = F_TWO_EE * 10;
-      end      
+      end
     end
   endfunction // F_TWO_EE
 
@@ -209,7 +209,7 @@ module Goldschmidt_Integer_Divider #(
                                              w_rounder==1'b1 ? (r_product[L_RESULT_MSB:L_RESULT_LSB]+1) :
                                              r_product[L_RESULT_MSB:L_RESULT_LSB];
   wire [P_GID_FACTORS_MSB:0] w_result    = r_calc_remainder==1'b1 ? ((r_converged==1'b1 && r_signed_extend==1'b1) ? ~w_remainder : w_remainder) :
-                                                                         ((r_converged==1'b1 && r_signed_extend==1'b1) ? ~w_quotient  : w_quotient);
+                                                                    ((r_converged==1'b1 && r_signed_extend==1'b1) ? ~w_quotient  : w_quotient);
   // Initial Cases
   wire w_denominator_is_one     = $signed(i_wb4_slave_data[L_FACTOR1_MSB:L_FACTOR1_LSB]) == 1 ? 1'b1 : 1'b0;
   wire w_denominator_is_neg_one = ($signed(i_wb4_slave_data[L_FACTOR1_MSB:L_FACTOR1_LSB]) == -1 && i_wb4_slave_tgd[0] == 1'b0) ? 1'b1 : 1'b0;
@@ -224,14 +224,14 @@ module Goldschmidt_Integer_Divider #(
   reg                       r_div_wb4_stall;
   // Control wires (indicate when this module is available)
   wire w_div_wb4_stall = r_div_wb4_stall & i_wb4_master_stall;
-  
+
   ///////////////////////////////////////////////////////////////////////////////
   //            ********      Architecture Declaration      ********           //
   ///////////////////////////////////////////////////////////////////////////////
 
   // WB4 Slave Interface ouput wires
   assign o_wb4_slave_stall = r_div_acc_stall;
-  
+
   ///////////////////////////////////////////////////////////////////////////////
   // Process     : Divider Accumulator
   // Description : FSM that controls the pipelined division step. Performs the
@@ -261,7 +261,7 @@ module Goldschmidt_Integer_Divider #(
               !w_divisor_not_zero : begin
                 // If either is zero return zero
                 r_div_acc_stb <= 1'b1;
-                r_divisor       <=  i_wb4_slave_data[P_GID_FACTORS_MSB:0];
+                r_divisor       <= i_wb4_slave_data[P_GID_FACTORS_MSB:0];
                 r_dividend      <= -1;
                 if (w_div_wb4_stall == 1'b1) begin
                   //
@@ -476,7 +476,7 @@ module Goldschmidt_Integer_Divider #(
   // WB4 Master Write Interface wires
   assign o_wb4_master_stb  = r_div_wb4_stb;
   assign o_wb4_master_data = r_div_wb4_result;
-  
+
   ///////////////////////////////////////////////////////////////////////////////
   // Process     : EE_LUT_Entry_Select
   // Description : Creates and selects the correct entry in the LUT.

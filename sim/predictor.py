@@ -104,6 +104,10 @@ class predictor(UVMSubscriber):
            Args:
              t: wb4_slave_seq (Sequence Item)
         """
+
+        #self.num_items = self.num_items+1
+        #print("Item number: ", self.num_items)
+
         if (self.data_length >= 8):
             # translate data length from width in bits to width in hex characters
             data_length = int(self.data_length / (8))
@@ -114,16 +118,16 @@ class predictor(UVMSubscriber):
 
         if (t.data_tag == 0):
             # generate the result, convert it to hex, remove the '0x' appended by hex() and remove the overflow bit.
-            if (self.hex_to_int(divisor, (self.data_length/2)) > 0):
-                result_int = self.hex_to_int(dividend, self.data_length/2) / self.hex_to_int(divisor, self.data_length/2)
+            if (int(divisor, 16) > 0):
+                result_int = int(dividend, 16) / int(divisor, 16)
             else:
                 result_int = -1
 
 
         if (t.data_tag == 1):
             # generate the result, convert it to hex, remove the '0x' appended by hex() and remove the overflow bit.
-            if (self.hex_to_int(divisor, (self.data_length/2)) > 0):
-                result_int = self.hex_to_int(dividend, self.data_length/2) % self.hex_to_int(divisor, self.data_length/2)
+            if (int(divisor, 16) > 0):
+                result_int = int(dividend, 16) / int(divisor, 16)
             else:
                 result_int = -1
 
@@ -150,7 +154,7 @@ class predictor(UVMSubscriber):
         self.ap.write(tr)
 
 
-    def int_to_hex(self, int_value, factor_length):
+    def int_to_hex(self, int_value, factors_length):
         """
            Function: hex_to_int
 
@@ -158,35 +162,20 @@ class predictor(UVMSubscriber):
              with a defined length.
 
            Args:
+             factors_length: in bytes
              hex_value: a hex string without '0x' preappended
              hex_length: Number of bits used to represent the hex value
         """
-        data_in = hex(int_value)
-        data_in = data_in[2:] # Remove the '0x'
-        if (len(data_in) < factor_length*2):
-            for x in range(1, (factor_length*2)-len(data_in)):
+        data_in = hex(int_value).lstrip("0x").rstrip("L")
+
+        if (len(data_in) < factors_length*2):
+            for x in range(0, (factors_length*2)-len(data_in)):
                 data_in = "0"+data_in
-        dividend = data_in[factor_length:]
-        divisor = data_in[:factor_length-1]
+
+        dividend = data_in[factors_length:]
+        divisor = data_in[:factors_length]
 
         return dividend, divisor
-
-
-    def hex_to_int(self, hex_value, hex_length):
-        """
-           Function: hex_to_int
-
-           Definition: This function returns the decimal value for a hexadecimal
-             with a defined length.
-
-           Args:
-             hex_value: a hex string without '0x' preappended
-             hex_length: Number of bits used to represent the hex value
-        """
-        try:
-          return int(hex_value, int(math.ceil(hex_length)))
-        except ValueError:
-          return 0 # "Invalid Hexadecimal Value"
 
 
 uvm_component_utils(predictor)
