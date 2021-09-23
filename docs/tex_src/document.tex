@@ -1,0 +1,89 @@
+\documentclass[letterpaper]{article}
+\usepackage{amsmath}
+
+\title{Goldschmidt Integer Divider User Guide}
+\date{2021-09-01}
+\author{Jose R. Garcia}
+
+\begin{document}
+	\pagenumbering{gobble}
+	\maketitle
+	\newpage
+	\pagenumbering{arabic}
+	
+	\tableofcontents
+    \newpage
+    
+	\section{Abstract}
+	
+	The Goldschmidt integer divider written in verilog. Similar to Newton-Raphson but the division step can be pipelined. This document contains and overview of the design and guidance on the usage and integration of this component.
+	
+	\section{Syntax and Abbreviations}
+	
+	\begin{tabular}{l|l}
+		Term & Definition \\
+		\hline
+		0b0 & Binary number syntax \\
+		\hline
+		0x0000\_0000 & Hexadecimal number syntax \\
+		\hline
+		bit & Single binary digit (0 or 1) \\
+		\hline
+		BYTE & 8-bits wide data unit \\
+		\hline
+		DWORD & 32-bits wide data unit \\
+		\hline
+		FPGA & Field Programmable Gate Array \\
+		\hline
+		GCD & Goldschmidt Convergence Division \\
+		\hline
+		LSB & Least Significant bit \\
+		\hline
+		MSB & Most Significant bit \\
+		\hline
+		WB & Wishbone Interface \\
+	\end{tabular}
+	
+	\section{Design}
+	\paragraph{}
+	The Goldschmidt division is an special application of the Newton-Raphson method. This iterative divider computes:
+	\begin{equation*}
+	d(i) = d[i-1].(2-d[i-1])
+	\end{equation*}
+	\begin{equation*}
+	D(i) = D[i-1].(2-d[i-1])
+	\end{equation*}
+	were \( d \) is the divisor; \( D \) is the dividend; \( i \) is the step. \( D \) converges toward the quotient and d converges toward 1 at a quadratic rate. For the divisor to converge to 1 it must obviously be less than 2 therefore integers greater than 2 must be multiplied by 10 to the negative powers to shift the decimal point. Consider the following example: $ \dfrac{16}{4} $
+	
+	\begin{tabular}{l|l|l|l}
+		Step & D & d & 2-d \\ \hline
+		inputs & 16 & 4 & - \\
+		0 & 1.6 & 0.4 & 1.6 \\
+		1 & 2.56 & 0.64 & 1.36 \\
+		2 & 3.4816 & 0.8704 & 1.1296 \\
+		3 & 3.93281536 & 0.98320384 & 1.01679616 \\
+		4 & 3.99887155603702 & 0.999717889009254 & 1.00028211099075 \\
+		5 & 3.99999968165356 & 0.999999920413389 & 1.00000007958661 \\
+		6 & 3.99999999999997 & 0.999999999999994 & 1.00000000000001 \\
+		7 & 4 & 1 & 1 \\
+	\end{tabular}
+	
+	\paragraph{}The code implementation compares the size of the divisor against $ 2*10^n $ were $ n $ is a natural number. The result of the comparison indicates against which $ 10^m $, were $ m $ is a negative integer, to multiply the divisor. Then the Goldschmidt division is performed until the divisor converges to degree indicated by \textbf{P\_GCD\_ACCURACY}. The quotient returned is the rounded up value to which the dividend converged to. Each Goldschmidt step is performed in to two half steps in order use only half the multipliers and save resources.
+	
+	The remainder calculation requires an extra clock which is why the address tag is used to make the decision on whether to do the calculation or skip it. The calculation simply takes the value after the decimal point of the quotient a multiplies it by the divisor.
+	
+	\section{Clocks and Resets}
+	
+	\section{Interfaces}
+	The divider and divisor are received through i\_master\_div0\_read\_data and i\_master \_div1\_read\_data and qualified by the i\_slave\_stb. The i\_slave\_stb signal could be managed in different ways. It can be a pulse with the width of a singe clock to operate as a pipelined Wishbone interface and the o\_master\_div\_write\_stb can be considered as a Wishbone o\_ack. I can also be operated as a Wishbone standard using those same signals.
+	
+	When the division concludes  the o\_master\_div\_write\_stb is asserted and writes the result to the address received through i\_slave\_addr.
+	\subsection{WB4 Write Slave}
+		
+	\subsection{WB4 Write Slave}
+	
+	\subsection{WB4 Write Slave}
+	
+	\section{Configurable Parameters}
+		
+\end{document}

@@ -34,7 +34,7 @@
 # Author        : Jose R Garcia
 # Created       : 2020/11/05 20:08:35
 # Last modified : 2021/06/24 23:19:01
-# Project Name  : Adder
+# Project Name  : Goldschmidt Integer Divider
 # Module Name   : tb_env
 # Description   : Test Bench Environment.
 #
@@ -42,13 +42,17 @@
 #
 ##################################################################################################
 import cocotb
+from cocotb_coverage.coverage import *
+
 from uvm.base import *
 from uvm.comps import *
 from uvm.macros import uvm_component_utils
+
 from wb4_master_agent import *
 from wb4_slave_agent import *
+
 from predictor import *
-# from scoreboard_simple import *
+from f_cov import *
 
 class tb_env(UVMEnv):
     """
@@ -69,12 +73,12 @@ class tb_env(UVMEnv):
              parent: NONE
         """
         self.wb4_master_agent = None # WB Instruction agent
-        self.wb4_slave_agent = None  # WB Instruction agent
-        self.cfg = None              # tb_env_config
-        self.scoreboard = None       # scoreboard
-        self.predictor = None        # passive
-        self.f_cov = None            # functional coverage
-        self.tag = "tb_env"          #
+        self.wb4_slave_agent  = None # WB Instruction agent
+        self.cfg              = None # tb_env_config
+        self.scoreboard       = None # scoreboard
+        self.predictor        = None # passive
+        self.f_cov            = None # functional coverage
+        self.tag              = name #
 
 
     def build_phase(self, phase):
@@ -100,6 +104,7 @@ class tb_env(UVMEnv):
         self.wb4_slave_agent.cfg = self.cfg.wb4_slave_agent_cfg
 
         self.predictor = predictor.type_id.create("predictor", self)
+        self.f_cov = f_cov.type_id.create("f_cov", self)
 
         if (self.cfg.has_scoreboard):
             self.scoreboard = UVMInOrderClassComparator.type_id.create("scoreboard", self)
@@ -116,14 +121,18 @@ class tb_env(UVMEnv):
              phase: connect_phase
         """
 
-        self.predictor.data_length = self.cfg.DUT_SLAVE_DATA_IN_LENGTH
 
         if (self.cfg.has_scoreboard):
-            self.predictor.ap.connect(self.scoreboard.before_export)
             self.wb4_master_agent.ap.connect(self.scoreboard.after_export)
 
-
         if (self.cfg.has_predictor):
+            self.predictor.data_length = self.cfg.DUT_SLAVE_DATA_IN_LENGTH
             self.wb4_slave_agent.ap.connect(self.predictor.analysis_export)
+            self.predictor.ap.connect(self.scoreboard.before_export)
+
+        if (self.cfg.has_functional_coverage):
+            self.f_cov.data_length = self.cfg.DUT_SLAVE_DATA_IN_LENGTH
+            self.f_cov.data_bins_range = self.cfg.data_bins_range
+            self.wb4_slave_agent.ap.connect(self.f_cov.analysis_export)
 
 uvm_component_utils(tb_env)

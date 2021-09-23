@@ -34,10 +34,11 @@
 // Author        : Jose R Garcia
 // Created       : 2020/11/04 23:20:43
 // Last modified : 2021/08/07 17:09:32
-// Project Name  : CLU
+// Project Name  : Goldschmidt Integer Divider
 // Module Name   : TB_TOP
 // Description   : The TB_TOP is a wrapper to include the missing signals
-//                 required by the verification agents.
+//                 required by the verification agents(stub agents interface
+//                 unused signals)
 //
 // Additional Comments:
 //

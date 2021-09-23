@@ -34,9 +34,9 @@
 # Author        : Jose R Garcia
 # Created       : 2020/11/05 19:26:21
 # Last modified : 2021/06/24 17:35:57
-# Project Name  : ORCs
+# Project Name  : Goldschmidt Integer Divider
 # Module Name   : top
-# Description   : Adder Test Top. Wraps the design units
+# Description   : Goldschmidt_Integer_Divider Test Top. Wraps the design units
 #                 into the test environment.
 #
 # Additional Comments:
@@ -51,6 +51,7 @@ sys.path.append('../externals/uvm_python_Wishbone_Pipeline_Slave/')
 # Import cocotb clock and timers
 from cocotb.triggers import Timer
 from cocotb.clock import Clock
+from cocotb_coverage.coverage import *
 # Import uvm-python base items
 from uvm.base import run_test, UVMDebug
 from uvm.base.uvm_phase import UVMPhase

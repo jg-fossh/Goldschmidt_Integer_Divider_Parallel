@@ -1,23 +1,23 @@
 ##################################################################################################
 # BSD 3-Clause License
-# 
+#
 # Copyright (c) 2020, Jose R. Garcia
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 # 1. Redistributions of source code must retain the above copyright notice, this
 #    list of conditions and the following disclaimer.
-# 
+#
 # 2. Redistributions in binary form must reproduce the above copyright notice,
 #    this list of conditions and the following disclaimer in the documentation
 #    and/or other materials provided with the distribution.
-# 
+#
 # 3. Neither the name of the copyright holder nor the names of its
 #    contributors may be used to endorse or promote products derived from
 #    this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -34,7 +34,7 @@
 # Author        : Jose R Garcia
 # Created       : 2020/11/05 20:08:35
 # Last modified : 2021/06/15 19:00:57
-# Project Name  : Adder
+# Project Name  : Goldschmidt Integer Divider
 # Module Name   : tb_env_config
 # Description   : Test Bench Configurations
 #
@@ -53,17 +53,17 @@ from wb4_slave_config import *
 from wb4_slave_seq import *
 
 class tb_env_config(UVMEnv):
-    """         
+    """
        Class: Memory Interface Read Slave Monitor
-        
+
        Definition: Contains functions, tasks and methods of this agent's monitor.
     """
 
     def __init__(self, name, parent=None):
         super().__init__(name, parent)
-        """         
+        """
            Function: new
-          
+
            Definition: Test environment configuration object.
 
            Args:
@@ -76,10 +76,11 @@ class tb_env_config(UVMEnv):
         #
         self.has_scoreboard = False           # scoreboard on/off
         self.has_predictor  = False           # predictor on/off
-        self.has_functional_coverage = False  # predictor on/off
+        self.has_functional_coverage = False  # coverage on/off
         #
         self.DUT_SLAVE_DATA_IN_LENGTH = 0
-        # 
+        self.data_bins_range = [0, 25]
+        #
         self.tag = "tb_env_config"
 
 

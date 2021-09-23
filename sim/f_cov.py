@@ -30,14 +30,13 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 ##################################################################################################
-# File name     : predictor.py
+# File name     : f_cov.py
 # Author        : Jose R Garcia
 # Created       : 2020/11/05 20:08:35
 # Last modified : 2021/06/27 00:22:44
 # Project Name  : Goldschmidt Integer Divider
-# Module Name   : predictor
-# Description   : Non Time Consuming model. Calculates the product of the division when tgd = 0
-#                 and calculates the remainder when tgd = 1.
+# Module Name   : f_cov
+# Description   : Funtional Coverage definitions and collections.
 #
 # Additional Comments:
 #
@@ -48,7 +47,12 @@ from binascii import unhexlify, hexlify
 import math
 
 import cocotb
+import cocotb_coverage
 from cocotb.triggers import *
+from cocotb_coverage.crv import *
+from cocotb_coverage import coverage
+from cocotb_coverage.coverage import *
+
 from uvm.base import *
 from uvm.comps import *
 from uvm.tlm1 import *
@@ -56,11 +60,12 @@ from uvm.macros import *
 from wb4_master_seq import *
 from wb4_slave_seq import *
 
-class predictor(UVMSubscriber):
+
+class f_cov(UVMSubscriber):
     """
        Class: Predictor
 
-       Definition: Contains functions, tasks and methods of this predictor.
+       Definition: Contains functions, tasks and methods of this f_cov.
     """
 
     def __init__(self, name, parent=None):
@@ -74,24 +79,30 @@ class predictor(UVMSubscriber):
              name: This component's name.
              parent: NONE
         """
-        self.ap = None
-        self.num_items = 0
-        self.tag = name
+        self.num_items    = 0
+        self.tag          = name
+        self.data_length  = 0
+        self.factors_bins = None
         #
-        self.data_length = 0
+        self.data_bins_range = [0, 50]
 
 
-    def build_phase(self, phase):
-        super().build_phase(phase)
+    def end_of_elaboration_phase(self, phase):
         """
-           Function: build_phase
+           Function: end_of_elaboration_phase
 
-           Definition: Brings this agent's virtual interface.
-
-           Args:
-             phase: build_phase
+           Definition: This function is executed before the run phase. We generate the coverage
+             bins after the connect and build phase so that if the test intents to modify
+             self.data_bins_range it should have already done so. Also this way we only generate
+             self.factors_bins once as it is a loop that may have the pontential to slow the
+             simulation.
         """
-        self.ap = UVMAnalysisPort("ap", self)
+
+        if (self.data_length >= 8):
+            # translate data length from width in bits to width in hex characters
+            self.data_length = int(self.data_length / (8))
+
+        self.factors_bins = self.hex_bins_gen(self.data_length)
 
 
     def write(self, t):
@@ -106,53 +117,18 @@ class predictor(UVMSubscriber):
              t: wb4_slave_seq (Sequence Item)
         """
 
-        #self.num_items = self.num_items+1
-        #print("Item number: ", self.num_items)
+        # Define the cover point
+        @coverage.CoverPoint("dut.operation", vname="div_rem", bins = [0, 1], weight = 80)
+        @coverage.CoverPoint("dut.dividend", vname="dividend", bins = self.factors_bins, weight = 10)
+        @coverage.CoverPoint("dut.divisor", vname="divisor", bins = self.factors_bins, weight = 10)
+        def sample(div_rem, dividend, divisor):
+            pass
 
-        if (self.data_length >= 8):
-            # translate data length from width in bits to width in hex characters
-            data_length = int(self.data_length / (8))
-        else:
-            data_length = self.data_length
+        # get a string with the hex value of the dividend and the divisor
+        dividend, divisor = self.int_to_hex(t.data_in, self.data_length)
 
-        dividend, divisor = self.int_to_hex(t.data_in, data_length)
-
-        if (t.data_tag == 0):
-            # generate the result, convert it to hex, remove the '0x' appended by hex() and remove the overflow bit.
-            if (int(divisor, 16) > 0):
-                result_int = int(dividend, 16) / int(divisor, 16)
-            else:
-                result_int = -1
-
-
-        if (t.data_tag == 1):
-            # generate the result, convert it to hex, remove the '0x' appended by hex() and remove the overflow bit.
-            if (int(divisor, 16) > 0):
-                result_int = int(dividend, 16) % int(divisor, 16)
-            else:
-                result_int = -1
-
-
-        self.create_response(int(math.ceil(result_int)))
-
-
-    def create_response(self, result):
-        """
-           Function: create_response
-
-           Definition: Creates a response transaction and updates the pc counter.
-
-           Args:
-             t: wb4_master_seq (Sequence Item)
-        """
-        write_seq0 = wb4_master_seq("write_seq0")
-        write_seq0.data_out    = result
-        write_seq0.cycle       = 1
-        write_seq0.strobe      = 1
-        write_seq0.acknowledge = 1
-        tr = []
-        tr = write_seq0
-        self.ap.write(tr)
+        # Collect coverage
+        sample(t.data_tag , dividend, divisor)
 
 
     def int_to_hex(self, int_value, factors_length):
@@ -179,4 +155,14 @@ class predictor(UVMSubscriber):
         return dividend, divisor
 
 
-uvm_component_utils(predictor)
+    # Define the bins for the hex values
+    def hex_bins_gen(self, num_bytes):
+        hex_bins_list = [""] * (self.data_bins_range[1]-self.data_bins_range[0])
+
+        for ii in range(self.data_bins_range[0], self.data_bins_range[1]):
+            count, discard_this = self.int_to_hex(ii, num_bytes)
+            hex_bins_list[ii] = count
+
+        return hex_bins_list
+
+uvm_component_utils(f_cov)
