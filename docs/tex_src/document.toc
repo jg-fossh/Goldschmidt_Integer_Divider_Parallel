@@ -10,7 +10,7 @@
 \contentsline {subsection}{\numberline {6.2}WB4 Master}{3}%
 \contentsline {section}{\numberline {7}Test Bench and Simulation}{3}%
 \contentsline {subsection}{\numberline {7.1}Test Bench}{3}%
-\contentsline {subsection}{\numberline {7.2}Simulation}{3}%
-\contentsline {subsection}{\numberline {7.3}Prerequisites}{3}%
-\contentsline {paragraph}{}{3}%
-\contentsline {subsection}{\numberline {7.4}Execution}{4}%
+\contentsline {subsection}{\numberline {7.2}Simulation}{4}%
+\contentsline {subsubsection}{\numberline {7.2.1}Prerequisites}{4}%
+\contentsline {paragraph}{}{4}%
+\contentsline {subsubsection}{\numberline {7.2.2}Execution}{4}%
