@@ -118,10 +118,10 @@ class f_cov(UVMSubscriber):
         """
 
         # Define the cover point
-        @coverage.CoverPoint("dut.operation", vname="div_rem", bins = [0, 1], weight = 80)
+        @coverage.CoverPoint("dut.operation", vname="div_rem_signess", bins = [0, 1, 2, 3], weight = 80)
         @coverage.CoverPoint("dut.dividend", vname="dividend", bins = self.factors_bins, weight = 10)
         @coverage.CoverPoint("dut.divisor", vname="divisor", bins = self.factors_bins, weight = 10)
-        def sample(div_rem, dividend, divisor):
+        def sample(div_rem_signess, dividend, divisor):
             pass
 
         # get a string with the hex value of the dividend and the divisor

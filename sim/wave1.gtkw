@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.109 (w)1999-2020 BSI
-[*] Sat Aug  7 14:43:29 2021
+[*] Sat Sep 25 03:06:34 2021
 [*]
-[dumpfile] "/home/jota/Documents/Sandbox/m5-v1_R32GC/externals/Goldschmidt_Integer_Divider/sim/dump.fst"
-[dumpfile_mtime] "Sat Aug  7 14:43:29 2021"
-[dumpfile_size] 9103
-[savefile] "/home/jota/Documents/Sandbox/m5-v1_R32GC/externals/Goldschmidt_Integer_Divider/sim/wave.gtkw"
-[timestart] 28910
-[size] 1920 1029
-[pos] -553 -1
-*-12.510683 52600 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[dumpfile] "/home/jota/Documents/Sandbox/jg-fossh/Goldschmidt_Integer_Divider/sim/dump.fst"
+[dumpfile_mtime] "Sat Sep 25 03:05:01 2021"
+[dumpfile_size] 6983
+[savefile] "/home/jota/Documents/Sandbox/jg-fossh/Goldschmidt_Integer_Divider/sim/wave1.gtkw"
+[timestart] 30890
+[size] 1366 742
+[pos] -1 -1
+*-12.146525 42000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] .
 [treeopen] .TB_TOP.
 [sst_width] 39
@@ -142,14 +142,12 @@ TB_TOP.dut.w_lut_value[31:0]
 @28
 TB_TOP.dut.w_dividend_not_zero
 TB_TOP.dut.w_divisor_not_zero
-TB_TOP.dut.w_converged
 @24
 TB_TOP.dut.w_dividend[31:0]
 TB_TOP.dut.w_divisor[31:0]
-@40000025
+@40000024
 [fpshift_count] 32
 TB_TOP.dut.w_dividend_acc[63:0]
-@40000024
 [fpshift_count] 32
 TB_TOP.dut.w_divisor_acc[63:0]
 [fpshift_count] 32
@@ -160,14 +158,17 @@ TB_TOP.dut.w_two_minus_divisor[63:0]
 TB_TOP.dut.w_quotient[31:0]
 TB_TOP.dut.w_remainder[31:0]
 @28
+TB_TOP.dut.w_converged
+TB_TOP.dut.r_converged
 TB_TOP.dut.w_rounder
 @24
 TB_TOP.dut.w_result[31:0]
+@29
+TB_TOP.dut.r_div_acc_state[2:0]
 @200
 -
 @28
 TB_TOP.dut.r_signed_extend
-TB_TOP.dut.r_converged
 @24
 TB_TOP.dut.r_divisor[31:0]
 @200

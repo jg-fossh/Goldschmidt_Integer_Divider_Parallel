@@ -121,7 +121,6 @@ class tb_env(UVMEnv):
              phase: connect_phase
         """
 
-
         if (self.cfg.has_scoreboard):
             self.wb4_master_agent.ap.connect(self.scoreboard.after_export)
 

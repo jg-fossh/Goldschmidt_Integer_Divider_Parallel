@@ -46,7 +46,7 @@
 module TB_TOP #(
   // Compile time configurable generic parameters
   parameter integer P_GID_FACTORS_MSB  = 31,
-  parameter integer P_GID_ACCURACY_LVL = 12,
+  parameter integer P_GID_ACCURACY_LVL = 16,
   parameter integer P_GID_ROUND_UP_LVL = 3
 )(
   // Component's clocks and resets

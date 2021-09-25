@@ -125,7 +125,7 @@ class predictor(UVMSubscriber):
                 result_int = -1
 
 
-        if (t.data_tag == 1):
+        if (t.data_tag == 2):
             # generate the result, convert it to hex, remove the '0x' appended by hex() and remove the overflow bit.
             if (int(divisor, 16) > 0):
                 result_int = int(dividend, 16) % int(divisor, 16)
