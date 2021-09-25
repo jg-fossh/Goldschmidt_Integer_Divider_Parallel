@@ -1,6 +1,8 @@
 [submodule "externals/uvm_python_Wishbone_Pipeline_Master"]
 	path = externals/uvm_python_Wishbone_Pipeline_Master
 	url = https://github.com/jg-fossh/uvm_python_Wishbone_Pipeline_Master.git
+	branch = master
 [submodule "externals/uvm_python_Wishbone_Pipeline_Slave"]
 	path = externals/uvm_python_Wishbone_Pipeline_Slave
 	url = https://github.com/jg-fossh/uvm_python_Wishbone_Pipeline_Slave.git
+	branch = master
