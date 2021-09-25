@@ -204,7 +204,7 @@ class default_test(test_base):
         #
         wb4_slave_sqr = self.tb_env.wb4_slave_agent.sqr
 
-        # Create transactions to stimulate the slave interface
+        # Create transactions to stimulate the slave interface (calc division)
         increment_sum_seq          = wb4_slave_single_write_seq("increment_sum_seq")
         increment_sum_seq.data     = self.count * 2
         increment_sum_seq.strobe   = 1
@@ -220,6 +220,30 @@ class default_test(test_base):
             increment_sum_seq.strobe   = 1
             increment_sum_seq.data_tag = 0
             increment_sum_seq.data     = self.count * data_inc
+
+
+        await increment_sum_seq.start(wb4_slave_sqr)
+
+
+        # Re-start the count
+        self.count = int(pow(2, (self.tb_env.cfg.DUT_SLAVE_DATA_IN_LENGTH)/2)-1)
+
+        # Create transactions to stimulate the slave interface (calc remainder)
+        increment_sum_seq          = wb4_slave_single_write_seq("increment_sum_seq")
+        increment_sum_seq.data     = self.count * 2
+        increment_sum_seq.strobe   = 1
+        increment_sum_seq.cycle    = 1
+        increment_sum_seq.data_tag = 2
+
+        while self.count < stop_count:
+            await increment_sum_seq.start(wb4_slave_sqr)
+            # Count decrement data for next sequence.
+            self.count += 1
+            increment_sum_seq          = wb4_slave_single_write_seq("increment_sum_seq")
+            increment_sum_seq.cycle    = 1
+            increment_sum_seq.strobe   = 1
+            increment_sum_seq.data_tag = 2
+            increment_sum_seq.data     = (self.count * data_inc)+1
 
 
         await increment_sum_seq.start(wb4_slave_sqr)
