@@ -56,8 +56,8 @@
 //  used to make the decision on whether to do the calculation or skip it.
 /////////////////////////////////////////////////////////////////////////////////
 module Goldschmidt_Integer_Divider #(
-  parameter integer P_GID_FACTORS_MSB  = 31, // 
-  parameter integer P_GID_ACCURACY_LVL = 24, //
+  parameter integer P_GID_FACTORS_MSB  = 31, //
+  parameter integer P_GID_ACCURACY_LVL = 16, //
   parameter integer P_GID_ROUND_UP_LVL = 3   //
 )(
   // Component's clocks and resets
@@ -103,7 +103,7 @@ module Goldschmidt_Integer_Divider #(
   function [P_GID_FACTORS_MSB:0] F_EE_LUT (
     input [P_GID_FACTORS_MSB:0] one_tength,
     input integer               nth_iteration
-  );    
+  );
     // This function's variables
     integer hh;
 
@@ -115,7 +115,7 @@ module Goldschmidt_Integer_Divider #(
           // Each entry is ten times smaller than the previous.
           F_EE_LUT = F_EE_LUT / 10;
         end
-      end      
+      end
     end
   endfunction // F_EE_LUT
 
@@ -135,7 +135,7 @@ module Goldschmidt_Integer_Divider #(
       for (kk = 1; kk <= ee; kk = kk+1) begin
         // Each entry is ten times smaller than the previous.
         F_TWO_EE = F_TWO_EE * 10;
-      end      
+      end
     end
   endfunction // F_TWO_EE
 
@@ -158,15 +158,14 @@ module Goldschmidt_Integer_Divider #(
   localparam integer               L_ARRAY_HIGH   = F_ARRAY_HIGH(L_ONE_TENGTH);
   localparam integer               L_ARRAY_LENGTH = L_ARRAY_HIGH+1;
   // Program Counter FSM States
-  localparam [3:0] S_IDLE                 = 4'b0001; // Waits for valid factors.
-  localparam [3:0] S_STEP_ONE             = 4'b0010; // D[i] * (2-d[i]); d[i] * (2-d[i]); were i is the iteration.
-  localparam [3:0] S_REMAINDER_TO_NATURAL = 4'b0100; // Convert remainder from decimal fraction to a natural number.
-  localparam [3:0] S_OFFLOAD_RESULT       = 4'b1000; //
+  localparam [2:0] S_IDLE           = 3'b001; // Waits for valid factors.
+  localparam [2:0] S_STEP_ONE       = 3'b010; // D[i] * (2-d[i]); d[i] * (2-d[i]); were i is the iteration.
+  localparam [2:0] S_OFFLOAD_RESULT = 3'b100; //
   // Misc.
   localparam integer               L_ZERO_FILLER        = L_FACTOR1_LSB;
   localparam integer               L_TWOS_LEADING_ZEROS = P_GID_FACTORS_MSB-1;
   localparam [L_MUL_FACTORS_MSB:0] L_NUMBER_TWO_EXT     = {{L_TWOS_LEADING_ZEROS{1'b0}}, 2'b10, {L_ZERO_FILLER{1'b0}}};
- 
+
   ///////////////////////////////////////////////////////////////////////////////
   // Internal Signals Declarations
   ///////////////////////////////////////////////////////////////////////////////
@@ -174,7 +173,7 @@ module Goldschmidt_Integer_Divider #(
   integer iter;
   // Divider Accumulator signals
   reg  [P_GID_FACTORS_MSB:0] w_lut_value;
-  reg  [3:0]                 r_div_acc_state;
+  reg  [2:0]                 r_div_acc_state;
   wire                       w_dividend_not_zero = i_wb4_slave_data[P_GID_FACTORS_MSB:0]==0 ? 1'b0 : 1'b1;
   wire                       w_divisor_not_zero  = i_wb4_slave_data[L_FACTOR1_MSB:L_FACTOR1_LSB]==0 ? 1'b0 : 1'b1;
   reg  [L_MUL_FACTORS_MSB:0] r_dividend_acc;
@@ -193,32 +192,35 @@ module Goldschmidt_Integer_Divider #(
   reg  [((P_GID_FACTORS_MSB+1)*4)-1:0] r_product0;
   reg  [((P_GID_FACTORS_MSB+1)*4)-1:0] r_product1;
 
-  wire [L_MUL_FACTORS_MSB:0] w_dividend_acc = (r_div_acc_state[0]==1'b1 && i_wb4_slave_stb==1'b1) ?
-                                                {w_dividend, {L_ZERO_FILLER{1'b0}}} :
-                                                r_product0[L_STEP_PRODUCT_MSB:P_GID_FACTORS_MSB+1];
+  // Iterative operation signals
   wire [L_MUL_FACTORS_MSB:0] w_divisor_acc = (r_div_acc_state[0]==1'b1 && i_wb4_slave_stb==1'b1) ?
                                                {w_divisor, {L_ZERO_FILLER{1'b0}}} :
                                                r_product1[L_STEP_PRODUCT_MSB:P_GID_FACTORS_MSB+1];
+
+  wire [L_MUL_FACTORS_MSB:0] w_two_minus_divisor = (L_NUMBER_TWO_EXT + ~r_product1[L_STEP_PRODUCT_MSB:P_GID_FACTORS_MSB+1]); // 2-divisor
+  // wire                       w_converged         = &w_divisor_acc[P_GID_FACTORS_MSB:P_GID_FACTORS_MSB-P_GID_ACCURACY_LVL]; // is it 0.9xxx...?
+  wire                       w_converged         = ~(|w_two_minus_divisor[P_GID_FACTORS_MSB:P_GID_FACTORS_MSB-P_GID_ACCURACY_LVL]); // is it .00xxx...?
+  reg                        r_converged;
+
+  wire [L_MUL_FACTORS_MSB:0] w_dividend_acc = (r_div_acc_state[0]==1'b1 && i_wb4_slave_stb==1'b1) ?
+                                                {w_dividend, {L_ZERO_FILLER{1'b0}}} :
+                                              (r_div_acc_state[1]==1'b1 && w_converged==1'b1 && r_calc_remainder==1'b1) ?
+                                                {{L_ZERO_FILLER{1'b0}},r_product0[L_RESULT_LSB-1:L_RESULT_LSB-L_FACTOR1_LSB]} :
+                                                r_product0[L_STEP_PRODUCT_MSB:P_GID_FACTORS_MSB+1];
+
   wire [L_MUL_FACTORS_MSB:0] w_multiplier = (r_div_acc_state[0]==1'b1 && i_wb4_slave_stb==1'b1) ?
                                               {{L_ZERO_FILLER{1'b0}}, w_lut_value} :
                                               (r_div_acc_state[1]==1'b1 && w_converged==1'b1 && r_calc_remainder==1'b1 ) ?
                                                 {r_divisor, {L_ZERO_FILLER{1'b0}}} :
                                                 w_two_minus_divisor;
-  // Iterative operation signals
-  wire [L_MUL_FACTORS_MSB:0] w_two_minus_divisor = (L_NUMBER_TWO_EXT + ~r_product1[L_STEP_PRODUCT_MSB:P_GID_FACTORS_MSB+1]); // 2-divisor
-  // wire                       w_converged         = &r_divisor_acc[P_GID_FACTORS_MSB:P_GID_FACTORS_MSB-P_GID_ACCURACY_LVL]; // is it 0.9xxx...?
-  wire                       w_converged         = &w_divisor_acc[P_GID_FACTORS_MSB:P_GID_FACTORS_MSB-P_GID_ACCURACY_LVL]; // is it 0.9xxx...?
-  reg                        r_converged;
   // Result Registers Write Signals
-  // wire                       w_rounder   = &r_product1[(L_RESULT_LSB-1):L_ROUND_LSB];
   wire                       w_rounder   = &w_dividend_acc[P_GID_FACTORS_MSB:L_ROUND_LSB];
   wire [P_GID_FACTORS_MSB:0] w_quotient  = r_converged==1'b0 ? r_dividend_acc[L_FACTOR1_MSB:L_FACTOR1_LSB] :
                                              w_rounder==1'b1 ? (r_product0[L_RESULT_MSB:L_RESULT_LSB]+1) :
                                              r_product0[L_RESULT_MSB:L_RESULT_LSB];
 
-  wire [P_GID_FACTORS_MSB:0] w_remainder = r_converged==1'b0 ? r_divisor :
-                                             w_rounder==1'b1 ? (r_product1[L_RESULT_MSB:L_RESULT_LSB]+1) :
-                                             r_product1[L_RESULT_MSB:L_RESULT_LSB];
+  wire [P_GID_FACTORS_MSB:0] w_remainder = w_rounder==1'b1 ? (r_product0[L_RESULT_MSB:L_RESULT_LSB]+1) :
+                                             r_product0[L_RESULT_MSB:L_RESULT_LSB];
   wire [P_GID_FACTORS_MSB:0] w_result    = r_calc_remainder==1'b1 ? (
                                              (r_converged==1'b1 && r_signed_extend==1'b1) ?
                                                ~w_remainder : w_remainder) : (
@@ -273,9 +275,9 @@ module Goldschmidt_Integer_Divider #(
             casez(1'b1)
               !w_divisor_not_zero : begin
                 // If either is zero return zero
-                r_div_acc_stb   <= 1'b1;
-                r_divisor_acc   <= {i_wb4_slave_data[P_GID_FACTORS_MSB:0], {L_ZERO_FILLER{1'b0}}};
-                r_dividend_acc  <= -1;
+                r_div_acc_stb  <= 1'b1;
+                r_divisor_acc  <= {i_wb4_slave_data[P_GID_FACTORS_MSB:0], {L_ZERO_FILLER{1'b0}}};
+                r_dividend_acc <= -1;
                 if (w_div_wb4_stall == 1'b1) begin
                   //
                   r_div_acc_stall <= 1'b1;
@@ -288,9 +290,9 @@ module Goldschmidt_Integer_Divider #(
               end
               !w_dividend_not_zero : begin
                // If either is zero return zero
-               r_div_acc_stb   <= 1'b1;
-               r_divisor_acc   <= 0;
-               r_dividend_acc  <= 0;
+               r_div_acc_stb  <= 1'b1;
+               r_divisor_acc  <= 0;
+               r_dividend_acc <= 0;
                if (w_div_wb4_stall == 1'b1) begin
                  //
                  r_div_acc_stall <= 1'b1;
@@ -303,9 +305,9 @@ module Goldschmidt_Integer_Divider #(
               end
               w_denominator_is_one : begin
                 // if denominator is 1 return numerator
-                r_div_acc_stb   <= 1'b1;
-                r_divisor_acc   <= 0;
-                r_dividend_acc  <= {i_wb4_slave_data[P_GID_FACTORS_MSB:0], {L_ZERO_FILLER{1'b0}}};
+                r_div_acc_stb  <= 1'b1;
+                r_divisor_acc  <= 0;
+                r_dividend_acc <= {i_wb4_slave_data[P_GID_FACTORS_MSB:0], {L_ZERO_FILLER{1'b0}}};
                 if (w_div_wb4_stall == 1'b1) begin
                   //
                   r_div_acc_stall <= 1'b1;
@@ -318,9 +320,9 @@ module Goldschmidt_Integer_Divider #(
               end
               w_denominator_is_neg_one : begin
                 // if denominator is -1 return -1*numerator
-                r_div_acc_stb   <= 1'b1;
-                r_divisor_acc   <= 0;
-                r_dividend_acc  <= {~i_wb4_slave_data[P_GID_FACTORS_MSB:0], {L_ZERO_FILLER{1'b0}}};
+                r_div_acc_stb  <= 1'b1;
+                r_divisor_acc  <= 0;
+                r_dividend_acc <= {~i_wb4_slave_data[P_GID_FACTORS_MSB:0], {L_ZERO_FILLER{1'b0}}};
                 if (w_div_wb4_stall == 1'b1) begin
                   //
                   r_div_acc_stall <= 1'b1;
@@ -333,9 +335,9 @@ module Goldschmidt_Integer_Divider #(
               end
               w_equal_factors : begin
                 // if equal return 1 for quotient and zero for remainder
-                r_div_acc_stb   <= 1'b1;
-                r_divisor_acc   <= 0;
-                r_dividend_acc  <= {{(L_ZERO_FILLER-1){1'b0}}, 1'b1, {L_ZERO_FILLER{1'b0}}};
+                r_div_acc_stb  <= 1'b1;
+                r_divisor_acc  <= 0;
+                r_dividend_acc <= {{(L_ZERO_FILLER-1){1'b0}}, 1'b1, {L_ZERO_FILLER{1'b0}}};
                 if (w_div_wb4_stall == 1'b1) begin
                   //
                   r_div_acc_stall <= 1'b1;
@@ -391,9 +393,9 @@ module Goldschmidt_Integer_Divider #(
 	            //
               r_dividend_acc <= {{L_ZERO_FILLER{1'b0}}, r_product0[L_RESULT_LSB-1:P_GID_FACTORS_MSB+1]};
             end
-            //w_multiplier    <= {r_divisor, {L_ZERO_FILLER{1'b0}}};
+            r_div_acc_stb   <= 1'b1;
             r_converged     <= 1'b1;
-            r_div_acc_state <= S_REMAINDER_TO_NATURAL;
+            r_div_acc_state <= S_OFFLOAD_RESULT;
           end
           else if (w_converged == 1'b1) begin
             r_div_acc_stb   <= 1'b1;
@@ -404,17 +406,11 @@ module Goldschmidt_Integer_Divider #(
             // Second half of the division step
             r_dividend_acc  <= r_product0[L_STEP_PRODUCT_MSB:P_GID_FACTORS_MSB+1];
             r_divisor_acc   <= r_product1[L_STEP_PRODUCT_MSB:P_GID_FACTORS_MSB+1];
-            // w_multiplier    <= w_two_minus_divisor;
             r_converged     <= w_converged;
             r_div_acc_state <= S_STEP_ONE;
           end
         end
         r_div_acc_state[2] : begin
-          // Return the remainder
-          r_div_acc_stb   <= 1'b1;
-          r_div_acc_state <= S_OFFLOAD_RESULT;
-        end
-        r_div_acc_state[3] : begin
           //
           r_div_acc_ack <= 1'b0;
           if (w_div_wb4_stall == 1'b1) begin
