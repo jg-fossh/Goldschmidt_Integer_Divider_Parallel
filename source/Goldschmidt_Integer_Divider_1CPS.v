@@ -33,7 +33,7 @@
 // File name     : Goldschmidt_Integer_Divider.v
 // Author        : Jose R Garcia
 // Created       : 31-05-2021 18:07
-// Last modified : 2021/08/07 16:43:30
+// Last modified : 2021/09/25 21:23:18
 // Project Name  : ORCs
 // Module Name   : Goldschmidt_Integer_Divider
 // Description   : The Goldschmidt divider is an iterative method
@@ -57,7 +57,7 @@
 /////////////////////////////////////////////////////////////////////////////////
 module Goldschmidt_Integer_Divider #(
   parameter integer P_GID_FACTORS_MSB  = 31, //
-  parameter integer P_GID_ACCURACY_LVL = 16, //
+  parameter integer P_GID_ACCURACY_LVL = 8, //
   parameter integer P_GID_ROUND_UP_LVL = 3   //
 )(
   // Component's clocks and resets
@@ -150,7 +150,6 @@ module Goldschmidt_Integer_Divider #(
   localparam integer L_RESULT_MSB       = ((P_GID_FACTORS_MSB+1)*3)-1;
   localparam integer L_RESULT_LSB       = (P_GID_FACTORS_MSB+1)*2;
   // Round up bit limits
-  //localparam integer L_ROUND_LSB = L_RESULT_LSB-1-P_GID_ROUND_UP_LVL;
   localparam integer L_ROUND_LSB = P_GID_FACTORS_MSB-P_GID_ROUND_UP_LVL;
   //
   localparam integer               L_NINE_BYTES   = ((P_GID_FACTORS_MSB+1)/4)-1;
@@ -198,7 +197,6 @@ module Goldschmidt_Integer_Divider #(
                                                r_product1[L_STEP_PRODUCT_MSB:P_GID_FACTORS_MSB+1];
 
   wire [L_MUL_FACTORS_MSB:0] w_two_minus_divisor = (L_NUMBER_TWO_EXT + ~r_product1[L_STEP_PRODUCT_MSB:P_GID_FACTORS_MSB+1]); // 2-divisor
-  // wire                       w_converged         = &w_divisor_acc[P_GID_FACTORS_MSB:P_GID_FACTORS_MSB-P_GID_ACCURACY_LVL]; // is it 0.9xxx...?
   wire                       w_converged         = ~(|w_two_minus_divisor[P_GID_FACTORS_MSB:P_GID_FACTORS_MSB-P_GID_ACCURACY_LVL]); // is it .00xxx...?
   reg                        r_converged;
 

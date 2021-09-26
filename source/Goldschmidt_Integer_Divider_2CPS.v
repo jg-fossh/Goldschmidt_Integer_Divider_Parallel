@@ -33,7 +33,7 @@
 // File name     : Goldschmidt_Integer_Divider.v
 // Author        : Jose R Garcia
 // Created       : 2021/01/23 11:23:01
-// Last modified : 2021/08/07 17:07:59
+// Last modified : 2021/09/25 21:45:35
 // Project Name  : ORCs
 // Module Name   : Goldschmidt_Integer_Divider
 // Description   : The Goldschmidt divider is an iterative method
@@ -57,7 +57,7 @@
 /////////////////////////////////////////////////////////////////////////////////
 module Goldschmidt_Integer_Divider #(
   parameter integer P_GID_FACTORS_MSB  = 31, //
-  parameter integer P_GID_ACCURACY_LVL = 24, //
+  parameter integer P_GID_ACCURACY_LVL = 16, //
   parameter integer P_GID_ROUND_UP_LVL = 3   //
 )(
   // Component's clocks and resets
@@ -150,7 +150,6 @@ module Goldschmidt_Integer_Divider #(
   localparam integer L_RESULT_MSB       = ((P_GID_FACTORS_MSB+1)*3)-1;
   localparam integer L_RESULT_LSB       = (P_GID_FACTORS_MSB+1)*2;
   // Round up bit limits
-  //localparam integer L_ROUND_LSB = L_RESULT_LSB-1-P_GID_ROUND_UP_LVL;
   localparam integer L_ROUND_LSB = P_GID_FACTORS_MSB-P_GID_ROUND_UP_LVL;
   //
   localparam integer               L_NINE_BYTES   = ((P_GID_FACTORS_MSB+1)/4)-1;
@@ -158,12 +157,11 @@ module Goldschmidt_Integer_Divider #(
   localparam integer               L_ARRAY_HIGH   = F_ARRAY_HIGH(L_ONE_TENGTH);
   localparam integer               L_ARRAY_LENGTH = L_ARRAY_HIGH+1;
   // Program Counter FSM States
-  localparam [5:0] S_IDLE                 = 6'b000001; // Waits for valid factors.
-  localparam [5:0] S_SHIFT_DIVIDEND_POINT = 6'b000010; // multiply the dividend by minus powers of ten to shift the decimal point.
-  localparam [5:0] S_HALF_STEP_ONE        = 6'b000100; // D[i] * (2-d[i]); were i is the iteration.
-  localparam [5:0] S_HALF_STEP_TWO        = 6'b001000; // d[i] * (2-d[i]); were i is the iteration.
-  localparam [5:0] S_REMAINDER_TO_NATURAL = 6'b010000; // Convert remainder from decimal fraction to a natural number.
-  localparam [5:0] S_OFFLOAD_RESULT       = 6'b100000; //
+  localparam [4:0] S_IDLE                 = 5'b00001; // Waits for valid factors.
+  localparam [4:0] S_SHIFT_DIVIDEND_POINT = 5'b00010; // multiply the dividend by minus powers of ten to shift the decimal point.
+  localparam [4:0] S_HALF_STEP_ONE        = 5'b00100; // D[i] * (2-d[i]); were i is the iteration.
+  localparam [4:0] S_HALF_STEP_TWO        = 5'b01000; // d[i] * (2-d[i]); were i is the iteration.
+  localparam [4:0] S_OFFLOAD_RESULT       = 5'b10000; //
   // Misc.
   localparam integer               L_TWOS_LEADING_ZEROS = P_GID_FACTORS_MSB-1;
   localparam [L_MUL_FACTORS_MSB:0] L_NUMBER_TWO_EXT     = {{L_TWOS_LEADING_ZEROS{1'b0}}, 2'b10, {L_FACTOR1_LSB{1'b0}}};
@@ -175,7 +173,7 @@ module Goldschmidt_Integer_Divider #(
   integer iter;
   // Divider Accumulator signals
   reg  [P_GID_FACTORS_MSB:0] w_lut_value;
-  reg  [5:0]                 r_div_acc_state;
+  reg  [4:0]                 r_div_acc_state;
   wire                       w_dividend_not_zero = i_wb4_slave_data[P_GID_FACTORS_MSB:0]==0 ? 1'b0 : 1'b1;
   wire                       w_divisor_not_zero  = i_wb4_slave_data[L_FACTOR1_MSB:L_FACTOR1_LSB]==0 ? 1'b0 : 1'b1;
   reg  [P_GID_FACTORS_MSB:0] r_dividend;
@@ -196,11 +194,10 @@ module Goldschmidt_Integer_Divider #(
   // Iterative operation signals
   wire [L_MUL_FACTORS_MSB:0] w_current_divisor   = r_div_acc_state==S_HALF_STEP_TWO ? r_multiplicand : r_product[L_STEP_PRODUCT_MSB:P_GID_FACTORS_MSB+1];
   wire [L_MUL_FACTORS_MSB:0] w_two_minus_divisor = (L_NUMBER_TWO_EXT + ~w_current_divisor); // 2-divisor
-  wire                       w_converged         = &r_multiplicand[P_GID_FACTORS_MSB:P_GID_FACTORS_MSB-P_GID_ACCURACY_LVL]; // is it 0.9xxx...?
+  wire                       w_converged         = ~(|w_two_minus_divisor[P_GID_FACTORS_MSB:P_GID_FACTORS_MSB-P_GID_ACCURACY_LVL]); // is it .00xxx...?
   reg                        r_converged;
   // Result Registers Write Signals
-  // wire                       w_rounder   = &r_product[(L_RESULT_LSB-1):L_ROUND_LSB];
-  wire                       w_rounder   = &r_product[P_GID_FACTORS_MSB:L_ROUND_LSB];
+  wire                       w_rounder   = &w_current_divisor[P_GID_FACTORS_MSB:P_GID_FACTORS_MSB-P_GID_ROUND_UP_LVL];
   wire [P_GID_FACTORS_MSB:0] w_quotient  = r_converged==1'b0 ? r_dividend :
                                              w_rounder==1'b1 ? (r_product[L_RESULT_MSB:L_RESULT_LSB]+1) :
                                              r_product[L_RESULT_MSB:L_RESULT_LSB];
@@ -208,8 +205,8 @@ module Goldschmidt_Integer_Divider #(
   wire [P_GID_FACTORS_MSB:0] w_remainder = r_converged==1'b0 ? r_divisor :
                                              w_rounder==1'b1 ? (r_product[L_RESULT_MSB:L_RESULT_LSB]+1) :
                                              r_product[L_RESULT_MSB:L_RESULT_LSB];
-  wire [P_GID_FACTORS_MSB:0] w_result    = r_calc_remainder==1'b1 ? ((r_converged==1'b1 && r_signed_extend==1'b1) ? ~w_remainder : w_remainder) :
-                                                                    ((r_converged==1'b1 && r_signed_extend==1'b1) ? ~w_quotient  : w_quotient);
+  wire [P_GID_FACTORS_MSB:0] w_result    = r_calc_remainder==1'b1 ? (r_signed_extend==1'b1 ? ~w_remainder : w_remainder) :
+                                                                    (r_signed_extend==1'b1 ? ~w_quotient  : w_quotient);
   // Initial Cases
   wire w_denominator_is_one     = $signed(i_wb4_slave_data[L_FACTOR1_MSB:L_FACTOR1_LSB]) == 1 ? 1'b1 : 1'b0;
   wire w_denominator_is_neg_one = ($signed(i_wb4_slave_data[L_FACTOR1_MSB:L_FACTOR1_LSB]) == -1 && i_wb4_slave_tgd[0] == 1'b0) ? 1'b1 : 1'b0;
@@ -378,7 +375,7 @@ module Goldschmidt_Integer_Divider #(
           if (r_converged == 1'b1) begin
             // When the divisor converges to 1.0 (actually 0.99...).
             // Return the quotient
-            r_div_acc_stb <= 1'b1;
+            r_div_acc_stb   <= 1'b1;
             r_div_acc_state <= S_OFFLOAD_RESULT;
           end
           else begin
@@ -401,7 +398,8 @@ module Goldschmidt_Integer_Divider #(
             end
             r_multiplier    <= {r_divisor, {L_FACTOR1_LSB{1'b0}}};
             r_converged     <= 1'b1;
-            r_div_acc_state <= S_REMAINDER_TO_NATURAL;
+            r_div_acc_stb   <= 1'b1;
+            r_div_acc_state <= S_OFFLOAD_RESULT;
           end
           else begin
             // Second half of the division step
@@ -412,11 +410,6 @@ module Goldschmidt_Integer_Divider #(
           end
         end
         r_div_acc_state[4] : begin
-          // Return the remainder
-          r_div_acc_stb   <= 1'b1;
-          r_div_acc_state <= S_OFFLOAD_RESULT;
-        end
-        r_div_acc_state[5] : begin
           // S_OFFLOAD_RESULT
           r_div_acc_ack <= 1'b0;
           if (w_div_wb4_stall == 1'b1) begin

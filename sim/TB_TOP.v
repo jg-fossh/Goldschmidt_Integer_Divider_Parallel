@@ -33,7 +33,7 @@
 // File name     : TB_TOP.v
 // Author        : Jose R Garcia
 // Created       : 2020/11/04 23:20:43
-// Last modified : 2021/08/07 17:09:32
+// Last modified : 2021/09/25 21:19:06
 // Project Name  : Goldschmidt Integer Divider
 // Module Name   : TB_TOP
 // Description   : The TB_TOP is a wrapper to include the missing signals
@@ -46,7 +46,7 @@
 module TB_TOP #(
   // Compile time configurable generic parameters
   parameter integer P_GID_FACTORS_MSB  = 31,
-  parameter integer P_GID_ACCURACY_LVL = 16,
+  parameter integer P_GID_ACCURACY_LVL = 8,
   parameter integer P_GID_ROUND_UP_LVL = 3
 )(
   // Component's clocks and resets
