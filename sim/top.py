@@ -33,7 +33,7 @@
 # File name     : top.py
 # Author        : Jose R Garcia
 # Created       : 2020/11/05 19:26:21
-# Last modified : 2021/06/24 17:35:57
+# Last modified : 2021/09/26 09:36:40
 # Project Name  : Goldschmidt Integer Divider
 # Module Name   : top
 # Description   : Goldschmidt_Integer_Divider Test Top. Wraps the design units
@@ -131,8 +131,8 @@ async def top(dut):
 
     # Create a 1000Mhz clock
     clock = Clock(dut.i_clk, 1, units="ns")
-    proc_clk = cocotb.fork(clock.start((256+33+4), True))  # Start the clock
+    proc_clk = cocotb.fork(clock.start(None, True))  # Start the clock
     proc_reset = cocotb.fork(initial_reset(vif_master, vif_slave, dut))
     proc_run_test = cocotb.fork(initial_run_test(dut, vif_master, vif_slave))
 
-    await sv.fork_join([proc_run_test, proc_reset, proc_clk])
+    await sv.fork_join([proc_run_test, proc_reset])

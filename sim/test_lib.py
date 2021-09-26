@@ -33,7 +33,7 @@
 # File name     : test_lib.py
 # Author        : Jose R Garcia
 # Created       : 2020/11/05 19:26:21
-# Last modified : 2021/09/25 21:48:19
+# Last modified : 2021/09/26 09:37:54
 # Project Name  : Goldschmidt Integer Divider
 # Module Name   : test_lib
 # Description   : Collection of tests available for this module.
@@ -190,7 +190,7 @@ class default_test(test_base):
         master_proc = cocotb.fork(self.stimulate_master_intfc())
 
         await sv.fork_join_any([slave_proc, master_proc])
-        await Timer(5, "NS")
+        await Timer(33, "NS") # Allow some clocks for evething to settle
 
         phase.drop_objection(self, "default_test drop objection")
 
@@ -198,7 +198,7 @@ class default_test(test_base):
     async def stimulate_slave_intfc(self):
         #
         self.count = int(pow(2, (self.tb_env.cfg.DUT_SLAVE_DATA_IN_LENGTH)/2)-1)
-        data_inc   = 3
+        data_inc   = 2
         stop_count = self.count + (self.tb_env.cfg.data_bins_range[1] - self.tb_env.cfg.data_bins_range[0])/data_inc
 
         #
