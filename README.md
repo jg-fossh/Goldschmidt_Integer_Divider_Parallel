@@ -1,3 +1,6 @@
+# __*NOTE:*__
+I am well aware there are ~bugs to be fixed~ features to be implemented to handle negative numbers properly. I am worrking on these code updates.
+
 # Abstract
 
 A Goldschmidt integer divider written in verilog. Similar to Newton-Raphson but the division step can be pipelined. There are two sources/designs in this repo, a one clock per step and a two clocks per step implementations. The one clock per step uses twice the amount of multipliers or dsp blocks. The two step per clock uses only one set of multipliers or dsp to perform the division but also takes a higher amount of clock cycles to reach the result.
