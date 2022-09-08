@@ -16,11 +16,11 @@ THREADS := $(shell expr $(NPROCS) - $(NUM1))
 SIM = verilator
 TOPLEVEL_LANG = verilog
 EXTRA_ARGS += --default-language 1364-2005 --trace-fst --trace-structs --trace-max-array 1024 --trace-threads $(NUM2) --threads $(THREADS)
-ifneq ($(DUTSELECT),)
-  VERILOG_SOURCES = $(shell pwd)/../source/Goldschmidt_Integer_Divider_$(DUTSELECT)CPS.v ./TB_TOP.v
-else
-  VERILOG_SOURCES = $(shell pwd)/../source/Goldschmidt_Integer_Divider_2CPS.v ./TB_TOP.v
-endif
+#ifneq ($(DUTSELECT),)
+VERILOG_SOURCES = $(shell pwd)/../source/Goldschmidt_Integer_Divider_1CPS.v ./TB_TOP.v
+#else
+#  VERILOG_SOURCES = $(shell pwd)/../source/Goldschmidt_Integer_Divider_2CPS.v ./TB_TOP.v
+#endif
 
 # UVM Config/parameters
 PLUSARGS=+UVM_VERBOSITY=UVM_LOW +UVM_NO_RELNOTES

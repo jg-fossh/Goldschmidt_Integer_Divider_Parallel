@@ -107,22 +107,22 @@ module TB_TOP #(
   ///////////////////////////////////////////////////////////////////////////////
   Goldschmidt_Integer_Divider #(
     // Compile time configurable generic parameters
-    .P_GID_FACTORS_MSB(P_GID_FACTORS_MSB),
-    .P_GID_ACCURACY_LVL(P_GID_ACCURACY_LVL),
-    .P_GID_ROUND_UP_LVL(P_GID_ROUND_UP_LVL)
+    .P_GDIV_FACTORS_MSB(P_GID_FACTORS_MSB),
+    .P_GDIV_FRAC_LENGTH(16),
+    .P_GDIV_CONV_BITS(P_GID_ACCURACY_LVL),
+    .P_GDIV_ROUND_LVL(P_GID_ROUND_UP_LVL)
   ) dut (
     // Component's clocks and resets
     .i_clk(i_clk),               // clock
-    .i_reset_sync(i_reset_sync), // reset
+    .i_rst(i_reset_sync), // reset
     // Wishbone(Pipeline) Slave Interface
-    .i_wb4_slave_stb(i_wb4_slave_stb),     // WB stb, valid strobe
-    .i_wb4_slave_data(i_wb4_slave_data),   // WB data 0
-    .i_wb4_slave_tgd(i_wb4_slave_tgd),     // WB data tag, 0=add 1=substract
-    .o_wb4_slave_stall(o_wb4_slave_stall), // WB stall, not ready
-    // Wishbone(Pipeline) Master Interface
-    .o_wb4_master_stb(o_wb4_master_stb),     // WB write enable
-    .o_wb4_master_data(o_wb4_master_data),   // WB data, result
-    .i_wb4_master_stall(i_wb4_master_stall) // WB stall, not ready
+    .i_wb4s_cyc(1'b1),     // WB stb, valid strobe
+    .i_wb4s_stb(i_wb4_slave_stb),     // WB stb, valid strobe
+    .i_wb4s_data(i_wb4_slave_data),   // WB data 0
+    .i_wb4s_tgc(i_wb4_slave_tgd),     // WB data tag, 0=add 1=substract
+    .o_wb4s_stall(o_wb4_slave_stall), // WB stall, not ready
+    .o_wb4s_ack(o_wb4_master_stb),     // WB write enable
+    .o_wb4s_data(o_wb4_master_data)   // WB data, result
   );
 
 endmodule

@@ -1,1 +1,1 @@
-ctx.addClock("i_clk", 12.00)
+ctx.addClock("i_clk", 36.66)

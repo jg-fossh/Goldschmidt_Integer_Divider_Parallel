@@ -1,8 +1,9 @@
 
-#read_verilog "../../source/Goldschmidt_Integer_Divider_1CPS.v"
-read_verilog "../../source/Goldschmidt_Integer_Divider_2CPS.v"
+read_verilog "../../source/Goldschmidt_Integer_Divider_1CPS.v"
+#read_verilog "../../source/Goldschmidt_Integer_Divider_2CPS.v"
 ##synth_anlogic -retime -top Goldschmidt_Integer_Divider
 synth_ice40 -abc9 -dsp -json Goldschmidt_Integer_Divider_syn.json -top Goldschmidt_Integer_Divider
+#synth_ice40 -abc2 -relut -retime -dsp -json Goldschmidt_Integer_Divider_syn.json -top Goldschmidt_Integer_Divider
 ##JSON
 write_json Goldschmidt_Integer_Divider_syn.json
 
