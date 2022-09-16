@@ -1,5 +1,5 @@
 # __*NOTE:*__
-~I am well aware there are bugs to be fixed features to be implemented to handle negative numbers properly. I am worrking on these code updates.~
+~~I am well aware there are bugs to be fixed features to be implemented to handle negative numbers properly. I am worrking on these code updates.~~
 
 The code has gone through some overhauling. Fixed some bugs and applied some optimizations so it is now resource and timming friendlier. The test bench still needs work but it is enough to stimulate the design a see a waveform. But don't trust the transaction comparisons because the predictor needs work.
 

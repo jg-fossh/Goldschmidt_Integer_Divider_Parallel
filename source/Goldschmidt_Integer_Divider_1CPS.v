@@ -30,11 +30,11 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 /////////////////////////////////////////////////////////////////////////////////
-// File name     : Goldschmidt_Integer_Divider.v
+// File name     : Goldschmidt_Integer_Divider_REG_LUT.v
 // Author        : Jose R Garcia
 // Created       : 31-05-2021 18:07
 // Last modified : 2021/09/25 21:23:18
-// Project Name  : Goldschmidt_Integer_Divider
+// Project Name  : Goldschmidt Integer Divider
 // Module Name   : Goldschmidt_Integer_Divider
 // Description   : The Goldschmidt divider is an iterative method
 //                 to approximate the division result. This implementation
@@ -54,10 +54,10 @@
 //  used to make the decision on whether to do the calculation or skip it.
 /////////////////////////////////////////////////////////////////////////////////
 module Goldschmidt_Integer_Divider #(
-  parameter integer P_GDIV_FACTORS_MSB = 31,                  // Integer vector MSB 
+  parameter integer P_GDIV_FACTORS_MSB = 31, // Integer vector MSB 
   parameter integer P_GDIV_FRAC_LENGTH = 16, // Integer vector MSB 
-  parameter integer P_GDIV_CONV_BITS   = 8,                  // Bits that must = 0 to determine convergence
-  parameter integer P_GDIV_ROUND_LVL   = 3                   //
+  parameter integer P_GDIV_CONV_BITS   = 8,  // Bits that must = 0 to determine convergence
+  parameter integer P_GDIV_ROUND_LVL   = 3   //
 )(
   // Component's clocks and resets
   input i_clk, // clock
@@ -176,12 +176,10 @@ module Goldschmidt_Integer_Divider #(
   reg [L_MUL_FACTORS_MSB:0]  r_dividend_acc;
   // Turn negative to positive is signed division
   wire [P_GDIV_FACTORS_MSB:0] w_dividend = (i_wb4s_tgc[0]==1'b0 && i_wb4s_data[P_GDIV_FACTORS_MSB]==1'b1) ?
-                                            ~i_wb4s_data[P_GDIV_FACTORS_MSB:0] :
-                                            //-($signed(i_wb4s_data[P_GDIV_FACTORS_MSB:0])) :
+                                            -(i_wb4s_data[P_GDIV_FACTORS_MSB:0]) :
                                             i_wb4s_data[P_GDIV_FACTORS_MSB:0];
   wire [P_GDIV_FACTORS_MSB:0] w_divisor  = (i_wb4s_tgc[0]==1'b0 && i_wb4s_data[L_FACTOR1_MSB]==1'b1) ?
-                                            ~i_wb4s_data[L_FACTOR1_MSB:L_FACTOR1_LSB] :
-                                            //-($signed(i_wb4s_data[L_FACTOR1_MSB:L_FACTOR1_LSB])) :
+                                            -(i_wb4s_data[L_FACTOR1_MSB:L_FACTOR1_LSB]) :
                                             i_wb4s_data[L_FACTOR1_MSB:L_FACTOR1_LSB];
   // Corner Cases
   wire w_less_than          = (w_dividend > w_divisor) ? 1'b0 : 1'b1;
@@ -198,7 +196,6 @@ module Goldschmidt_Integer_Divider #(
                                                r_product1[L_PRODUCT_MSB:L_STEP_PRODUCT_LSB];
 
   wire [L_MUL_FACTORS_MSB:0] w_two_minus_divisor = (L_NUMBER_TWO_EXT + ~r_product1[L_PRODUCT_MSB:L_STEP_PRODUCT_LSB]); // 2-divisor
-  // wire [L_MUL_FACTORS_MSB:0] w_two_minus_divisor = (L_NUMBER_TWO_EXT - r_product1[L_STEP_PRODUCT_MSB:P_GDIV_FACTORS_MSB+1]); // 2-divisor
   wire                       w_converged         = ~(|w_two_minus_divisor[P_GDIV_FRAC_LENGTH-1 -: P_GDIV_CONV_BITS]); // is it .00xxx...?
   reg                        r_converged;
 
@@ -216,7 +213,7 @@ module Goldschmidt_Integer_Divider #(
     (r_div_acc_state==1'b0 && w_converged==1'b1 && r_calc_remainder==1'b1 ) ?
       {r_divisor, {P_GDIV_FRAC_LENGTH{1'b0}}} : w_two_minus_divisor;
   // Round Up?
-  wire w_ceil = &w_dividend_acc[P_GDIV_FACTORS_MSB:L_ROUND_LSB];
+  wire w_ceil = &r_product0[P_GDIV_FACTORS_MSB:L_ROUND_LSB];
   // Result Registers Write Signals
   wire [P_GDIV_FACTORS_MSB:0] w_result_mag = 
     (w_ceil==1'b1) ? (r_product0[L_PRODUCT_MSB -: (P_GDIV_FACTORS_MSB+1)]+1) : r_product0[L_PRODUCT_MSB -: (P_GDIV_FACTORS_MSB+1)];
@@ -367,10 +364,15 @@ module Goldschmidt_Integer_Divider #(
   always @(*) begin : EE_LUT_Entry_Select
     // Creates a check of the input against the 2EEx to select the LUT entry
     // that creates the proper decimal point shift.
-    r_lut_value = F_EE_LUT(L_ONE_TENGTH, 1);
-    for (iter = L_ARRAY_HIGH; iter > 0; iter = iter-1) begin
-      if (w_divisor < F_TWO_EE(iter)) begin
-         r_lut_value = F_EE_LUT(L_ONE_TENGTH, iter);
+    if (i_rst == 1'b1 || i_wb4s_cyc == 1'b0) begin
+      r_lut_value = F_EE_LUT(L_ONE_TENGTH, 1);
+    end
+    else begin
+      r_lut_value = F_EE_LUT(L_ONE_TENGTH, 1);
+      for (iter = L_ARRAY_HIGH; iter > 0; iter = iter-1) begin
+        if (w_divisor < F_TWO_EE(iter)) begin
+           r_lut_value = F_EE_LUT(L_ONE_TENGTH, iter);
+        end
       end
     end
   end // EE_LUT_Entry_Select
@@ -381,7 +383,7 @@ module Goldschmidt_Integer_Divider #(
   //               by modern synthesis tools.
   /////////////////////////////////////////////////////////////////////////////
   always @(posedge i_clk) begin : Dividen_Multiplication_Process
-    if (i_wb4s_cyc == 1'b1) begin
+    if (i_rst == 1'b0 && i_wb4s_cyc == 1'b1) begin
       // Multiply during active cycle
       r_product0 <= w_dividend_acc * w_multiplier;
     end
@@ -393,7 +395,7 @@ module Goldschmidt_Integer_Divider #(
   //               by modern synthesis tools.
   /////////////////////////////////////////////////////////////////////////////
   always @(posedge i_clk) begin : Divisor_Multiplication_Process
-    if (i_wb4s_cyc == 1'b1) begin
+    if (i_rst == 1'b0 && i_wb4s_cyc == 1'b1) begin
       // Multiply during active cycle
       r_product1 <= w_divisor_acc * w_multiplier;
     end
