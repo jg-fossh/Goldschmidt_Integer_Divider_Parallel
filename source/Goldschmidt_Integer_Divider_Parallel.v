@@ -1,7 +1,7 @@
 /////////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2020, Jose R. Garcia
+// Copyright (c) 2022, Jose R. Garcia
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,34 +30,22 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 /////////////////////////////////////////////////////////////////////////////////
-// File name     : Goldschmidt_Integer_Divider_Parallel.v
-// Author        : Jose R Garcia
-// Created       : 31-05-2021 18:07
-// Last modified : 2021/09/25 21:23:18
-// Project Name  : Goldschmidt Integer Divider Parallel
-// Module Name   : Goldschmidt_Integer_Divider_Parallel
-// Description   : The Goldschmidt divider is an iterative method
-//                 to approximate the division result. This implementation
-//                 targets integer numbers.
+// File name    : Goldschmidt_Integer_Divider_Parallel.v
+// Author       : Jose R Garcia
+// Project Name : Goldschmidt Integer Divider Parallel
+// Module Name  : Goldschmidt_Integer_Divider_Parallel
+// Description  : The Goldschmidt divider is an iterative method
+//                to approximate the division result. This implementation
+//                targets integer numbers.
 //
 // Additional Comments:
-//   This code implementation is based on the description of the Goldschmidt
-//   Dividers found on a publication of 2006; Synthesis of Arithmetic
-//   Circuits, FPGA, ASIC and Embedded Systems by Jean-Pierre Deschamp,
-//   Gery Jean Antoine Bioul and Gustavo D. Sutter. This divider computes:
-//                 d(i) = d[i-1].(2-d[i-1])
-//                          and
-//                 D(i) = D[i-1].(2-d[i-1])
-//   were 'd' is the divisor; 'D' is the dividend; 'i' is the step.
-//
-//  The remainder calculation requires an extra which is why the address tag is
-//  used to make the decision on whether to do the calculation or skip it.
+// 
 /////////////////////////////////////////////////////////////////////////////////
 module Goldschmidt_Integer_Divider_Parallel #(
-  parameter integer P_GDIV_FACTORS_MSB = 31, // Integer vector MSB 
-  parameter integer P_GDIV_FRAC_LENGTH = 16, // Integer vector MSB 
+  parameter integer P_GDIV_FACTORS_MSB = 31, // The MSB of each division factor.
+  parameter integer P_GDIV_FRAC_LENGTH = 16, // he amount of bits after the fixed point.
   parameter integer P_GDIV_CONV_BITS   = 8,  // Bits that must = 0 to determine convergence
-  parameter integer P_GDIV_ROUND_LVL   = 3   //
+  parameter integer P_GDIV_ROUND_LVL   = 3   // Bits after fixed point that need to be '1' to round up result.
 )(
   // Component's clocks and resets
   input i_clk, // clock

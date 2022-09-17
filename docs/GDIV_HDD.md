@@ -1,9 +1,8 @@
-# Goldschmidt Integer Divider Hardware Design Document
+# Goldschmidt Integer Divider (Parallel) Hardware Design Document
 
 ## Sumary
 
-The Goldschmidt integer divider written in verilog. Similar to Newton-Raphson but the division step can be pipelined.
-This document contains and overview of the design and guidance on the usage and integration of this component.
+The Goldschmidt Integer Divider (parallel) is a fast division algorithm. This module is written in Verilog 2005 (IEEE Standard 1364-2005) using the least-or none-macro functions. This document contains details of the hardeware design & implementation, test bench design and implementation, and example sysnthesis projects.
 
 ## Change Log
 
@@ -14,7 +13,7 @@ This document contains and overview of the design and guidance on the usage and 
 
 ## Table Of Contents
 
-- [Goldschmidt Integer Divider Hardware Design Document](#goldschmidt-integer-divider-hardware-design-document)
+- [Goldschmidt Integer Divider (Parallel) Hardware Design Document](#goldschmidt-integer-divider-parallel-hardware-design-document)
   - [Sumary](#sumary)
   - [Change Log](#change-log)
   - [Table Of Contents](#table-of-contents)
@@ -23,19 +22,22 @@ This document contains and overview of the design and guidance on the usage and 
     - [Table 1](#table-1)
   - [Design](#design)
     - [Division Process](#division-process)
-      - [Optimizations](#optimizations)
-        - [1's Complement vs 2's Complement](#1s-complement-vs-2s-complement)
-        - [Dropping Result MSBs](#dropping-result-msbs)
-        - [Function Geneerated Look Up Table](#function-geneerated-look-up-table)
+    - [Optimizations](#optimizations)
+      - [1's Complement vs 2's Complement](#1s-complement-vs-2s-complement)
+      - [Dropping Result MSBs](#dropping-result-msbs)
+      - [Function Geneerated Look Up Table](#function-geneerated-look-up-table)
   - [Configurable Parameters](#configurable-parameters)
   - [Clocks and Resets](#clocks-and-resets)
   - [Interfaces](#interfaces)
     - [WisheBone 4 Slave Interface](#wishebone-4-slave-interface)
   - [Memory Map](#memory-map)
-  - [Directory Structure](#directory-structure)
   - [Simulation](#simulation)
+    - [Simulation Prerequisites](#simulation-prerequisites)
   - [Synthesis](#synthesis)
+    - [Synthesis Prerequisites](#synthesis-prerequisites)
   - [Build](#build)
+    - [Build Prerequisites](#build-prerequisites)
+  - [Directory Structure](#directory-structure)
 
  ## Syntax and Abbreviations
 
@@ -99,17 +101,31 @@ The remainder calculation requires an extra clock cycle. The calculation simply 
 The division process starts 
 ![Division Process Design Diagram](Design_Diagram.jpeg)
 
-#### Optimizations
+### Optimizations
 
 The following describes design decisions used to optimized the design. These improve resource consumption and timing at the cost of results' precision.
 
-##### 1's Complement vs 2's Complement
+#### 1's Complement vs 2's Complement
 
-There are two reasons the 2's complement is relevant for this divider. One is the 2-$d$ operation in the iterative equation.
+In the case of computing $2-d[i-1]$ let us consider the diference between the 2's and 1's complement. The 1's complement of a binary number is the invertion of each bit of the vector that repesents the number. On the other hand the 2's complement operation used to obtain the negative version of a number represented in binary form is the inversion of each bit followed by adding 1. Hence;
 
-##### Dropping Result MSBs
+$$2 - d[i-1] \equiv 2 + ( invert(d[i-1]) + 1)$$
 
-##### Function Geneerated Look Up Table 
+But as the bit resolution increases the effect less meaningful the contribution of the least significant bit in the magnitud of a binary represented number. Here is a demonstration.
+
+|      Base      |          Binary Form          | Decimal Aproximation |
+| :------------: | :---------------------------: | :------------------: |
+|      0.3       | 0000.0100_1100_1100_1100_1101 |     0.3000001907     |
+| 2's complement | 1111.1011_0011_0011_0011_0011 |    -0.3000001907     |
+| 1's complement | 1111.1011_0011_0011_0011_0010 |    -0.3000011444     |
+
+Taking the previous into consideration we can lower the computational complexity by skipping the addition of 1 after the invertion. For our purposes this is an acceptable rounding error, specially when taking into account that the larger the vector the less significant is the error and the more the plus can cost to implement. This is the resulting approximation implemented in the design:
+
+$$2 - d[i-1] \approxeq 2 + invert(d[i-1])$$
+
+#### Dropping Result MSBs
+
+#### Function Geneerated Look Up Table 
 
 ## Configurable Parameters
 
@@ -118,9 +134,9 @@ These are the compile time over-writable parameters.
 | Parameters            | Default State | Description                                                                                                                                                                                                                                                    |
 | :-------------------- | :-----------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `P_GDIV_FACTORS_MSB`  |      31       | Dividend, divisor and results most significant bit.                                                                                                                                                                                                            |
-| `P_GDIV_FRAC_LENGTH`  |      16       | Amount of bits used for the vector portion that represents the fraction digits.                                                                                                                                                                                |
+| `P_GDIV_FRAC_LENGTH`  |      16       | Amount of bits used for the vector's portion that represents the fractions digits. (Bits after the fixed point)                                                                                                                                                |
 | `P_GDIV_CONV_BITS`    |       8       | Divisor Convergence Threshold. How close to one does it getto accept the result. These are the 32bits after the decimal point, 0.XXXXXXXX expressed as an integer.The default value represent the 999 part of a 64bit binary fractional number equal to 0.999. |
-| `P_GDIV_ROUND_UP_LVL` |       3       | Number of bits to look at after the decimal point to round up.                                                                                                                                                                                                 |
+| `P_GDIV_ROUND_UP_LVL` |       3       | Number of bits to look at after the fixed point to decide whether or not to round up the result.                                                                                                                                                               |
 
 ## Clocks and Resets
 
@@ -151,13 +167,9 @@ When the division concludes the o_master_div_write_stb is asserted and writes th
 
 N/A
 
-## Directory Structure
-
-- `build` _contains build scripts, synthesis scripts, build constraints, build outputs and bitstreams_
-- `sim` _contains simulation scripts and test bench files_
-- `source` _contains source code files (*.v)_
-
 ## Simulation
+
+### Simulation Prerequisites
 
 Simulation scripts assumes _Icarus Verilog_ (iverilog) as the simulation tool. From the /sim directory run make. Options available are
 
@@ -166,7 +178,11 @@ Simulation scripts assumes _Icarus Verilog_ (iverilog) as the simulation tool. F
 | `make`       | cleans, compiles and runs the test bench, then it loads the waveform. |
 | `make clean` | cleans all the compile and simulation products                        |
 
+![Simulation Waveform Snippet](wave.png)
+
 ## Synthesis
+
+### Synthesis Prerequisites
 
 Synthesis scripts assume _Yosys_ as the tool for synthesizing code and _Lattice ICE UP5K_ as the target FPGA device.
 
@@ -174,10 +190,21 @@ Synthesis scripts assume _Yosys_ as the tool for synthesizing code and _Lattice 
 | :------------------- | :---------------------- |
 | `yosys syn_ice40.ys` | runs synthesis scripts. |
 
+
+![Synthesized Design Diagram](gdiv.svg)
+
 ## Build
+
+### Build Prerequisites
 
 Build scripts are written for the Icestorm tool-chain. The target device is the up5k sold by Lattice.
 
 | Command    | Description                                            |
 | :--------- | :----------------------------------------------------- |
 | `make all` | cleans, compiles and runs synthesis and build scripts. |
+
+## Directory Structure
+
+- `build` _contains build scripts, synthesis scripts, build constraints, build outputs and bitstreams_
+- `sim` _contains simulation scripts and test bench files_
+- `source` _contains source code files (*.v)_
