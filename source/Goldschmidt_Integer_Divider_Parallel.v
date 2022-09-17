@@ -30,12 +30,12 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 /////////////////////////////////////////////////////////////////////////////////
-// File name     : Goldschmidt_Integer_Divider_REG_LUT.v
+// File name     : Goldschmidt_Integer_Divider_Parallel.v
 // Author        : Jose R Garcia
 // Created       : 31-05-2021 18:07
 // Last modified : 2021/09/25 21:23:18
-// Project Name  : Goldschmidt Integer Divider
-// Module Name   : Goldschmidt_Integer_Divider
+// Project Name  : Goldschmidt Integer Divider Parallel
+// Module Name   : Goldschmidt_Integer_Divider_Parallel
 // Description   : The Goldschmidt divider is an iterative method
 //                 to approximate the division result. This implementation
 //                 targets integer numbers.
@@ -53,7 +53,7 @@
 //  The remainder calculation requires an extra which is why the address tag is
 //  used to make the decision on whether to do the calculation or skip it.
 /////////////////////////////////////////////////////////////////////////////////
-module Goldschmidt_Integer_Divider #(
+module Goldschmidt_Integer_Divider_Parallel #(
   parameter integer P_GDIV_FACTORS_MSB = 31, // Integer vector MSB 
   parameter integer P_GDIV_FRAC_LENGTH = 16, // Integer vector MSB 
   parameter integer P_GDIV_CONV_BITS   = 8,  // Bits that must = 0 to determine convergence
@@ -360,7 +360,6 @@ module Goldschmidt_Integer_Divider #(
   // Process     : EE_LUT_Entry_Select
   // Description : Creates and selects the correct entry in the LUT.
   ///////////////////////////////////////////////////////////////////////////////
-  //always @(i_wb4s_stb) begin : EE_LUT_Entry_Select
   always @(*) begin : EE_LUT_Entry_Select
     // Creates a check of the input against the 2EEx to select the LUT entry
     // that creates the proper decimal point shift.

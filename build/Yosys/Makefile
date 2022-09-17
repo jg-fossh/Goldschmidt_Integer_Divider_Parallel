@@ -1,4 +1,4 @@
-PROJ = Goldschmidt_Integer_Divider
+PROJ = Goldschmidt_Integer_Divider_Parallel
 PIN_DEF = up5k
 DEVICE = up5k
 PACKAGE = sg48

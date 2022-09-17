@@ -1,15 +1,14 @@
 
-read_verilog "../../source/Goldschmidt_Integer_Divider_1CPS.v"
-#read_verilog "../../source/Goldschmidt_Integer_Divider_2CPS.v"
-##synth_anlogic -retime -top Goldschmidt_Integer_Divider
-synth_ice40 -abc9 -dsp -json Goldschmidt_Integer_Divider_syn.json -top Goldschmidt_Integer_Divider
-#synth_ice40 -abc2 -relut -retime -dsp -json Goldschmidt_Integer_Divider_syn.json -top Goldschmidt_Integer_Divider
+read_verilog "../../source/Goldschmidt_Integer_Divider_Parallel.v"
+##synth_anlogic -retime -top Goldschmidt_Integer_Divider_Parallel
+synth_ice40 -abc9 -dsp -json Goldschmidt_Integer_Divider_Parallel_syn.json -top Goldschmidt_Integer_Divider_Parallel
+#synth_ice40 -abc2 -relut -retime -dsp -json Goldschmidt_Integer_Divider_Parallel_syn.json -top Goldschmidt_Integer_Divider_Parallel
 ##JSON
-write_json Goldschmidt_Integer_Divider_syn.json
+write_json Goldschmidt_Integer_Divider_Parallel_syn.json
 
 #begin
 ## read_verilog -D ICE40_HX -lib -specify +/ice40/cells_sim.v
-## hierarchy -check -top Goldschmidt_Integer_Divider
+## hierarchy -check -top Goldschmidt_Integer_Divider_Parallel
 ## proc
 ##
 ## flatten
@@ -87,4 +86,4 @@ write_json Goldschmidt_Integer_Divider_syn.json
 ## check -noinit
 ##
 ## #JSON
-## write_json Goldschmidt_Integer_Divider_syn.json
+## write_json Goldschmidt_Integer_Divider_Parallel_syn.json
