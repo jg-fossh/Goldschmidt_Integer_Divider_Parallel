@@ -368,8 +368,8 @@ module Goldschmidt_Integer_Divider_Parallel #(
     end
     else begin
       r_lut_value = F_EE_LUT(L_ONE_TENGTH, 1);
-      for (iter = L_ARRAY_HIGH; iter > 0; iter = iter-1) begin
-        if (w_divisor < F_TWO_EE(iter)) begin
+      for (iter = 2; iter <= L_ARRAY_HIGH; iter = iter+1) begin
+        if (w_divisor > F_TWO_EE(iter)) begin
            r_lut_value = F_EE_LUT(L_ONE_TENGTH, iter);
         end
       end
