@@ -16,18 +16,19 @@ SEED_9 = 907
 SEED_10 = 1007
 SEED_11 = 1107
 
-all: clean asc_0 rpt_0
+all: clean asc_0 rpt_0 assertions
+
+assertions: 
+	egrep -w 'Error-Type|Error-Msg' $(PROJ)_$(DEVICE)_syn.log
 
 pnr: asc_0 asc_1 asc_2 asc_3 asc_4 asc_5 asc_6 asc_7 asc_8 asc_9 asc_10 asc_11
 
 rpt: rpt_0 rpt_1 rpt_2 rpt_3 rpt_4 rpt_5 rpt_6 rpt_7 rpt_8 rpt_9 rpt_10 rpt_11
 
-
 blif:
 	yosys -ql $(PROJ)_$(DEVICE)_syn.log syn_ice40.ys $^
 
-
-asc_0: blif
+asc_0: blif 
 	$(PLACE_AND_ROUTE) --$(DEVICE) --package $(PACKAGE) --json $(PROJ)_syn.json --pcf $(PIN_DEF).pcf --pcf-allow-unconstrained --timing-allow-fail --ignore-loops --pre-pack pre_pack.py --opt-timing --seed $(SEED_0) --asc $(PROJ)_$(SEED_0).asc --report critical_path_rpt$(SEED_0).json
 
 asc_1: blif

@@ -61,14 +61,28 @@ module Goldschmidt_Integer_Divider_Parallel #(
 );
 
   ///////////////////////////////////////////////////////////////////////////////
+  // Assertions Declaration
+  //     This is Verilog code and assertions were introduced in SystemVerilog,
+  //     therefore we are using an initial statement to catch mis-configurations.
+  //     Also Yosys and Verilator can't handle $error() nor $fatal() hence 
+  //     defaulted to $display() to provide feedback to the integrator.
+  ///////////////////////////////////////////////////////////////////////////////
+  initial begin
+    if (P_GDIV_FACTORS_MSB < 7)
+      $display("\n     Error-Type : Parameter Out of Range \n     Error-Msg  : P_GDIV_FACTORS_MSB should be equal or greater than 7. \n");
+
+    if (P_GDIV_FRAC_LENGTH == 0)
+      $display("\n     Error-Type : Parameter Out of Range \n     Error-Msg  : P_GDIV_FRAC_LENGTH must be greater than 0. \n");
+  end
+
+  ///////////////////////////////////////////////////////////////////////////////
   // Functions Declaration
   ///////////////////////////////////////////////////////////////////////////////
-
   ///////////////////////////////////////////////////////////////////////////////
   // Function    : Array Length
   // Description : Calculates the length of the Power of 10 Look Up Table.
   ///////////////////////////////////////////////////////////////////////////////
-  function integer F_ARRAY_HIGH (
+  function automatic integer F_ARRAY_HIGH (
     input integer one_tength
   );
     // This function's variables
@@ -87,7 +101,7 @@ module Goldschmidt_Integer_Divider_Parallel #(
   // Function    : EE Look Up Table
   // Description : Calculates the length of the Power of 10 Look Up Table.
   ///////////////////////////////////////////////////////////////////////////////
-  function [P_GDIV_FACTORS_MSB:0] F_EE_LUT (
+  function automatic [P_GDIV_FACTORS_MSB:0] F_EE_LUT (
     input integer one_tength,
     input integer nth_iteration
   );
@@ -110,7 +124,7 @@ module Goldschmidt_Integer_Divider_Parallel #(
   // Function    : Two * Entered Exponent
   // Description : Calculates 2EE(input)
   ///////////////////////////////////////////////////////////////////////////////
-  function [P_GDIV_FACTORS_MSB:0] F_TWO_EE (
+  function automatic [P_GDIV_FACTORS_MSB:0] F_TWO_EE (
     input integer ee
   );
     // This function's variables
@@ -298,7 +312,7 @@ module Goldschmidt_Integer_Divider_Parallel #(
           r_divisor <= w_divisor;
         end
         !r_div_acc_state : begin
-          //
+          // Iterate until the divisor converges towards 1.000xxxx...
           if (r_converged == 1'b1) begin
             // Remainder
             r_converged     <= 1'b0;
