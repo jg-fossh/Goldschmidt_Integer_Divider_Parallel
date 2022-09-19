@@ -85,7 +85,7 @@ async def initial_reset(vif_master, vif_slave, dut):
     """
     #await Timer(0, "NS")
     vif_master.rst_i <= 1
-    await Timer(33, "NS")
+    await Timer(10, "NS")
     vif_master.rst_i <= 0
 
 

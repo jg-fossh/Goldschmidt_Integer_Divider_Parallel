@@ -42,10 +42,10 @@
 // 
 /////////////////////////////////////////////////////////////////////////////////
 module Goldschmidt_Integer_Divider_Parallel #(
-  parameter integer P_GDIV_FACTORS_MSB = 31, // The MSB of each division factor.
-  parameter integer P_GDIV_FRAC_LENGTH = 16, // he amount of bits after the fixed point.
-  parameter integer P_GDIV_CONV_BITS   = 8,  // Bits that must = 0 to determine convergence
-  parameter integer P_GDIV_ROUND_LVL   = 3   // Bits after fixed point that need to be '1' to round up result.
+  parameter integer P_GDIV_FACTORS_MSB = 31,                   // The MSB of each division factor.
+  parameter integer P_GDIV_FRAC_LENGTH = P_GDIV_FACTORS_MSB+1, // he amount of bits after the fixed point.
+  parameter integer P_GDIV_CONV_BITS   = 8,                    // Bits that must = 0 to determine convergence
+  parameter integer P_GDIV_ROUND_LVL   = 3                     // Bits after fixed point that need to be '1' to round up result.
 )(
   // Component's clocks and resets
   input i_clk, // clock
@@ -73,6 +73,12 @@ module Goldschmidt_Integer_Divider_Parallel #(
 
     if (P_GDIV_FRAC_LENGTH == 0)
       $display("\n     Error-Type : Parameter Out of Range \n     Error-Msg  : P_GDIV_FRAC_LENGTH must be greater than 0. \n");
+
+    if (P_GDIV_CONV_BITS < 1)
+      $display("\n     Error-Type : Parameter Out of Range \n     Error-Msg  : P_GDIV_RESULT_SIZE must be greater than 0. \n");
+
+    if (P_GDIV_ROUND_LVL < 1)
+      $display("\n     Error-Type : Parameter Out of Range \n     Error-Msg  : P_GDIV_RESULT_SIZE must be greater than 0. \n");
   end
 
   ///////////////////////////////////////////////////////////////////////////////
@@ -143,33 +149,27 @@ module Goldschmidt_Integer_Divider_Parallel #(
   ///////////////////////////////////////////////////////////////////////////////
   // Internal Parameters Declaration
   ///////////////////////////////////////////////////////////////////////////////
-  //
+  // Division Process signals indexing constants
   localparam integer L_MUL_FACTORS_MSB  = (P_GDIV_FACTORS_MSB+1)+(P_GDIV_FRAC_LENGTH)-1;
   localparam integer L_FACTOR1_LSB      = P_GDIV_FACTORS_MSB+1;
   localparam integer L_FACTOR1_MSB      = (P_GDIV_FACTORS_MSB*2)+1;
-  localparam integer L_RESULT_MSB       = ((P_GDIV_FACTORS_MSB+1)*3)-1;
-  localparam integer L_RESULT_LSB       = (P_GDIV_FACTORS_MSB+1)*2;
   localparam integer L_PRODUCT_MSB      = (P_GDIV_FACTORS_MSB+1)+((P_GDIV_FRAC_LENGTH)*2)-1;
   localparam integer L_STEP_PRODUCT_LSB = P_GDIV_FRAC_LENGTH;
-  // Round up bit limits
-  localparam integer L_ROUND_LSB = P_GDIV_FACTORS_MSB-P_GDIV_ROUND_LVL;
-  //
+  // LookUp Table Constants
   localparam integer L_NINE_NIBLES = ((P_GDIV_FACTORS_MSB+1)/4)-1;
   localparam integer L_ONE_TENGTH  = {4'h1, {L_NINE_NIBLES{4'h9}}};
   localparam integer L_ARRAY_HIGH  = F_ARRAY_HIGH(L_ONE_TENGTH);
-  // Program Counter FSM States
-  localparam [0:0] S_INITIATE = 1'b1; // Waits for valid factors.
-  localparam [0:0] S_ITERATE  = 1'b0; // D[i] * (2-d[i]); d[i] * (2-d[i]); were i is the iteration step. D dividend & d divisor.
-  // Misc.
+  // Division Process '2' constants
   localparam integer               L_ZERO_FILLER        = L_FACTOR1_LSB;
   localparam integer               L_TWOS_LEADING_ZEROS = P_GDIV_FACTORS_MSB-1;
   localparam [L_MUL_FACTORS_MSB:0] L_NUMBER_TWO_EXT     = {{L_TWOS_LEADING_ZEROS{1'b0}}, 2'b10, {P_GDIV_FRAC_LENGTH{1'b0}}};
+  // Program Counter FSM States
+  localparam [0:0] S_INITIATE = 1'b1; // Waits for valid factors.
+  localparam [0:0] S_ITERATE  = 1'b0; // D[i] * (2-d[i]); d[i] * (2-d[i]); were i is the iteration step. D dividend & d divisor.
 
   ///////////////////////////////////////////////////////////////////////////////
   // Internal Signals Declarations
   ///////////////////////////////////////////////////////////////////////////////
-  // Misc.
-  integer iter;
   // Divider Accumulator signals
   reg                        r_div_acc_state;
   reg                        r_calc_remainder;
@@ -206,16 +206,17 @@ module Goldschmidt_Integer_Divider_Parallel #(
     (r_div_acc_state==1'b0 && w_converged==1'b1 && r_calc_remainder==1'b1) ?
       {{(P_GDIV_FACTORS_MSB+1){1'b0}}, r_product0[L_STEP_PRODUCT_LSB-1 -: P_GDIV_FRAC_LENGTH]} :
       r_product0[L_PRODUCT_MSB:L_STEP_PRODUCT_LSB];
-  // 
-  reg  [31:0]                r_lut_value; // The calculation is done in integers
-  wire [L_MUL_FACTORS_MSB:0] w_lut_value = {{(P_GDIV_FACTORS_MSB+1){1'b0}}, r_lut_value[31 -: P_GDIV_FRAC_LENGTH]}; // Fixed point adjust
+  // LookUp Table signals
+  integer                       iter;
+  reg     [31:0]                r_lut_value; // The calculation is done in integers
+  wire    [L_MUL_FACTORS_MSB:0] w_lut_value = {{(P_GDIV_FACTORS_MSB+1){1'b0}}, r_lut_value[31 -: P_GDIV_FRAC_LENGTH]}; // Fixed point adjust
   //
   wire [L_MUL_FACTORS_MSB:0] w_multiplier = 
     (r_div_acc_state==1'b1) ? w_lut_value :
     (r_div_acc_state==1'b0 && w_converged==1'b1 && r_calc_remainder==1'b1 ) ?
       {r_divisor, {P_GDIV_FRAC_LENGTH{1'b0}}} : w_two_minus_divisor;
   // Round Up?
-  wire w_ceil = &r_product0[P_GDIV_FACTORS_MSB:L_ROUND_LSB];
+  wire w_ceil = &r_product0[(P_GDIV_FRAC_LENGTH*2)-1 -: P_GDIV_ROUND_LVL];
   // Result Registers Write Signals
   wire [P_GDIV_FACTORS_MSB:0] w_result_mag = 
     (w_ceil==1'b1) ? (r_product0[L_PRODUCT_MSB -: (P_GDIV_FACTORS_MSB+1)]+1) : r_product0[L_PRODUCT_MSB -: (P_GDIV_FACTORS_MSB+1)];

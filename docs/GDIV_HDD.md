@@ -19,13 +19,11 @@ The Goldschmidt Integer Divider (parallel) is a fast division algorithm. This mo
   - [Table Of Contents](#table-of-contents)
   - [Syntax and Abbreviations](#syntax-and-abbreviations)
   - [Applicable Documents](#applicable-documents)
-    - [Table 1](#table-1)
   - [Design](#design)
     - [Division Process](#division-process)
     - [Optimizations](#optimizations)
       - [1's Complement vs 2's Complement](#1s-complement-vs-2s-complement)
-      - [Dropping Result MSBs](#dropping-result-msbs)
-      - [Function Geneerated Look Up Table](#function-geneerated-look-up-table)
+      - [Function Generated Look Up Table](#function-generated-look-up-table)
   - [Configurable Parameters](#configurable-parameters)
   - [Clocks and Resets](#clocks-and-resets)
   - [Interfaces](#interfaces)
@@ -33,6 +31,7 @@ The Goldschmidt Integer Divider (parallel) is a fast division algorithm. This mo
   - [Memory Map](#memory-map)
   - [Simulation](#simulation)
     - [Simulation Prerequisites](#simulation-prerequisites)
+    - [Simulating](#simulating)
   - [Synthesis](#synthesis)
     - [Synthesis Prerequisites](#synthesis-prerequisites)
   - [Build](#build)
@@ -41,32 +40,28 @@ The Goldschmidt Integer Divider (parallel) is a fast division algorithm. This mo
 
  ## Syntax and Abbreviations
 
-| Term        | Definition                                    |
-| :---------- | :-------------------------------------------- |
-| 0b0         | Binary number syntax                          |
-| 0x0000_0000 | Hexadecimal number syntax                     |
-| bit         | Single binary digit (0 or 1)                  |
-| BYTE        | 8-bits wide data unit                         |
-| DWORD       | 32-bits wide data unit                        |
-| FPGA        | Field Programmable Gate Array                 |
-| GDIV        | Goldschmidt Division                          |
-| HART        | Hardware thread                               |
-| HCC         | High Computational Cost Arithmetics Processor |
-| ISA         | Instruction Set Architecture                  |
-| LSB         | Least Significant bit                         |
-| MSB         | Most Significant bit                          |
-| WB          | Wishbone Interface                            |
+| Term        | Definition                    |
+| :---------- | :---------------------------- |
+| 0b0         | Binary number syntax          |
+| 0x0000_0000 | Hexadecimal number syntax     |
+| bit         | Single binary digit (0 or 1)  |
+| BYTE        | 8-bits wide data unit         |
+| DWORD       | 32-bits wide data unit        |
+| FPGA        | Field Programmable Gate Array |
+| FSM         | Finite State Machine          |
+| GDIV        | Goldschmidt Division          |
+| LSB         | Least Significant bit         |
+| MSB         | Most Significant bit          |
+| WB          | Wishbone Interface            |
 
 
 ## Applicable Documents
 
-### Table 1
-
-| Document Title                                                                                 | Revision                 | Filename         |
-| :--------------------------------------------------------------------------------------------- | :----------------------- | :--------------- |
-| __Wishbone B4__ WISHBONE System-on-Chip (SoC)Interconnection Architecturefor Portable IP Cores | 2010                     | wbspec_b4.pdf    |
-| Synthesis of Arithmetic Circuits, FPGA, ASIC and Embedded Systems                              | 1st Edition - March 2006 | non digital book |
-| Goldschmidt Integer Divider Hardware Requirements Document                                     | v1.0.0                   | GDIV_HRD.md      |
+| Document Title                                                                                 | Revision                 | Filename      |
+| :--------------------------------------------------------------------------------------------- | :----------------------- | :------------ |
+| __Wishbone B4__ WISHBONE System-on-Chip (SoC)Interconnection Architecturefor Portable IP Cores | 2010                     | wbspec_b4.pdf |
+| Synthesis of Arithmetic Circuits, FPGA, ASIC and Embedded Systems                              | 1st Edition - March 2006 | hardcopy book |
+| Goldschmidt Integer Divider Hardware Requirements Document                                     | v1.0.0                   | GDIV_HRD.md   |
 
 ## Design
 
@@ -98,7 +93,21 @@ The remainder calculation requires an extra clock cycle. The calculation simply 
 
 ### Division Process
 
-The division process starts 
+The division process is ruled by a two state FSM. The initial state first tests for special cases where either the dividend or divisor are zero, or if the are equal, or if the divisor is 1 or if the divisor is bigger than the dividend. These special cases bypass the iterative method and are handle in a single clock. When the standard division needs to be computed this state loads the lookup table's value to multiply the input factors. 
+
+The second state checks if the divisor has converged towards one. When it does converge it checks if the remainder needs to be calculated if not then the acknowledge signal is asserted and returns to the initial state.
+
+```mermaid
+    stateDiagram-v2
+    
+    S_INITIATE --> S_ITERATE : i_wb4s_cyc & i_wb4s_stb & !special_case
+
+    S_INITIATE --> S_INITIATE : (i_wb4s_cyc & i_wb4s_stb & special_case) | !i_wb4s_cyc | !i_wb4s_stb 
+    S_ITERATE --> S_ITERATE : i_wb4s_cyc & !w_converged
+    S_ITERATE --> S_INITIATE : !i_wb4s_cyc | w_converged
+
+```
+
 ![Division Process Design Diagram](Design_Diagram.jpeg)
 
 ### Optimizations
@@ -123,20 +132,18 @@ Taking the previous into consideration we can lower the computational complexity
 
 $$2 - d[i-1] \approxeq 2 + invert(d[i-1])$$
 
-#### Dropping Result MSBs
-
-#### Function Geneerated Look Up Table 
+#### Function Generated Look Up Table 
 
 ## Configurable Parameters
 
 These are the compile time over-writable parameters.
 
-| Parameters            | Default State | Description                                                                                                                                                                                                                                                    |
-| :-------------------- | :-----------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `P_GDIV_FACTORS_MSB`  |      31       | Dividend, divisor and results most significant bit.                                                                                                                                                                                                            |
-| `P_GDIV_FRAC_LENGTH`  |      16       | Amount of bits used for the vector's portion that represents the fractions digits. (Bits after the fixed point)                                                                                                                                                |
-| `P_GDIV_CONV_BITS`    |       8       | Divisor Convergence Threshold. How close to one does it getto accept the result. These are the 32bits after the decimal point, 0.XXXXXXXX expressed as an integer.The default value represent the 999 part of a 64bit binary fractional number equal to 0.999. |
-| `P_GDIV_ROUND_UP_LVL` |       3       | Number of bits to look at after the fixed point to decide whether or not to round up the result.                                                                                                                                                               |
+| Parameters            |  Range  |     Default State      | Description                                                                                                                                                                                                                                                    |
+| :-------------------- | :-----: | :--------------------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `P_GDIV_FACTORS_MSB`  | [7:255] |           7            | Dividend, divisor and results most significant bit.                                                                                                                                                                                                            |
+| `P_GDIV_FRAC_LENGTH`  | [8:256] | `P_GDIV_FACTORS_MSB`+1 | Amount of bits used for the vector's portion that represents the fractions digits. (Bits after the fixed point)                                                                                                                                                |
+| `P_GDIV_CONV_BITS`    | [1:256] |           8            | Divisor Convergence Threshold. How close to one does it getto accept the result. These are the 32bits after the decimal point, 0.XXXXXXXX expressed as an integer.The default value represent the 999 part of a 64bit binary fractional number equal to 0.999. |
+| `P_GDIV_ROUND_UP_LVL` | [1:256] |           3            | Number of bits to look at after the fixed point to decide whether or not to round up the result.                                                                                                                                                               |
 
 ## Clocks and Resets
 
@@ -161,7 +168,7 @@ When the division concludes the o_master_div_write_stb is asserted and writes th
 | `i_wb4s_data`  | N/A         | [(`P_GDIV_FACTORS_MSB`*2)+1:0] | Input     | Divisor and Dividend.                                                                             |
 | `o_wb4s_stall` | '1'         | 1-bit                          | Output    | Stall, not ready when set to 1.                                                                   |
 | `o_wb4s_ack`   | '1'         | 1-bit                          | Output    | Acknowledge, result valid.                                                                        |
-| `o_wb4s_data`  | 0x0         | [`P_GDIV_FACTORS_MSB`:0]       | Ouptu     | Result                                                                                            |
+| `o_wb4s_data`  | 0x0         | [`P_GDIV_FACTORS_MSB`:0]       | Output    | Result                                                                                            |
 
 ## Memory Map
 
@@ -171,12 +178,15 @@ N/A
 
 ### Simulation Prerequisites
 
-Simulation scripts assumes _Icarus Verilog_ (iverilog) as the simulation tool. From the /sim directory run make. Options available are
+Simulator : verilator v4.106
+Verification Framework : uvm-python
+Waveform Viewr : gtkwave
 
-| Command      | Description                                                           |
-| :----------- | :-------------------------------------------------------------------- |
-| `make`       | cleans, compiles and runs the test bench, then it loads the waveform. |
-| `make clean` | cleans all the compile and simulation products                        |
+### Simulating
+| Command      | Description                                    |
+| :----------- | :--------------------------------------------- |
+| `make`       | cleans, compiles and runs the test bench.      |
+| `make clean` | cleans all the compile and simulation products |
 
 ![Simulation Waveform Snippet](wave.png)
 
@@ -186,10 +196,10 @@ Simulation scripts assumes _Icarus Verilog_ (iverilog) as the simulation tool. F
 
 Synthesis scripts assume _Yosys_ as the tool for synthesizing code and _Lattice ICE UP5K_ as the target FPGA device.
 
-| Command              | Description             |
-| :------------------- | :---------------------- |
-| `yosys syn_ice40.ys` | runs synthesis scripts. |
-
+| Command              | Description                                          |
+| :------------------- | :--------------------------------------------------- |
+| `yosys syn_ice40.ys` | runs synthesis scripts.                              |
+| `make blif`          | runs yosys synthesis scripts and creates a log file. |
 
 ![Synthesized Design Diagram](gdiv.svg)
 
@@ -199,12 +209,14 @@ Synthesis scripts assume _Yosys_ as the tool for synthesizing code and _Lattice 
 
 Build scripts are written for the Icestorm tool-chain. The target device is the up5k sold by Lattice.
 
-| Command    | Description                                            |
-| :--------- | :----------------------------------------------------- |
-| `make all` | cleans, compiles and runs synthesis and build scripts. |
+| Command    | Description                                                                                                                                                                 |
+| :--------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `make all` | cleans, runs synthesis and runs mapping scripts. Place and route will not finish succesfully becuase this module consumes more resources the what is available in the UP5k. |
 
 ## Directory Structure
 
 - `build` _contains build scripts, synthesis scripts, build constraints, build outputs and bitstreams_
 - `sim` _contains simulation scripts and test bench files_
-- `source` _contains source code files (*.v)_
+- `source` _contains source code files_
+- `docs` _contains documentation resources_
+- `externals` _contains submodules on which project depends on_

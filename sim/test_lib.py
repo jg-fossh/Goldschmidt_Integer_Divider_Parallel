@@ -190,7 +190,7 @@ class default_test(test_base):
         master_proc = cocotb.fork(self.stimulate_master_intfc())
 
         await sv.fork_join_any([slave_proc, master_proc])
-        await Timer(33, "NS") # Allow some clocks for evething to settle
+        await Timer(12, "NS") # Allow some clocks for evething to settle
 
         phase.drop_objection(self, "default_test drop objection")
 

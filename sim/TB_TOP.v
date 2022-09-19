@@ -105,12 +105,8 @@ module TB_TOP #(
   // Instance    : dut
   // Description : Instance of the CLU implementation.
   ///////////////////////////////////////////////////////////////////////////////
-  Goldschmidt_Integer_Divider #(
-    // Compile time configurable generic parameters
-    .P_GDIV_FACTORS_MSB(P_GID_FACTORS_MSB),
-    .P_GDIV_FRAC_LENGTH(16),
-    .P_GDIV_CONV_BITS(P_GID_ACCURACY_LVL),
-    .P_GDIV_ROUND_LVL(P_GID_ROUND_UP_LVL)
+  Goldschmidt_Integer_Divider_Parallel #(
+    // Use defaults
   ) dut (
     // Component's clocks and resets
     .i_clk(i_clk),               // clock
