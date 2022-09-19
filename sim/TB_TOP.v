@@ -44,25 +44,25 @@
 //
 /////////////////////////////////////////////////////////////////////////////////
 module TB_TOP #(
-  // Compile time configurable generic parameters
-  parameter integer P_GID_FACTORS_MSB  = 31,
-  parameter integer P_GID_ACCURACY_LVL = 8,
-  parameter integer P_GID_ROUND_UP_LVL = 3
+  parameter integer P_GDIV_FACTORS_MSB = 31,                    // The MSB of each division factor.
+  parameter integer P_GDIV_FRAC_LENGTH = P_GDIV_FACTORS_MSB+1, // he amount of bits after the fixed point.
+  parameter integer P_GDIV_CONV_BITS   = 7,                    // Bits that must = 0 to determine convergence
+  parameter integer P_GDIV_ROUND_LVL   = 3                     // Bits after fixed point that need to be '1' to round up result.
 )(
   // Component's clocks and resets
   input i_clk,        // clock
   input i_reset_sync, // reset
   // Wishbone Pipeline Slave Interface Definition
-  input                              i_wb4_slave_stb,   // WB stb, valid strobe
-  input  [(P_GID_FACTORS_MSB*2)+1:0] i_wb4_slave_data,  // WB data {1,0}
-  input  [1:0]                       i_wb4_slave_tgd,   // WB data tag, 0=add 1=substract
-  output                             o_wb4_slave_stall, // WB stall, not ready
-  output                             o_wb4_slave_ack,   // WB ack, strobe acknowledge
+  input                               i_wb4_slave_stb,   // WB stb, valid strobe
+  input  [(P_GDIV_FACTORS_MSB*2)+1:0] i_wb4_slave_data,  // WB data {1,0}
+  input  [1:0]                        i_wb4_slave_tgd,   // WB data tag, 0=add 1=substract
+  output                              o_wb4_slave_stall, // WB stall, not ready
+  output                              o_wb4_slave_ack,   // WB ack, strobe acknowledge
   // Wishbone Pipeline Master Interface Definition
-  output                       o_wb4_master_stb,   // WB write enable
-  output [P_GID_FACTORS_MSB:0] o_wb4_master_data,  // WB data, result
-  input                        i_wb4_master_stall, // WB stall, not ready
-  input                        i_wb4_master_ack,   // WB ack, strobe acknowledge
+  output                        o_wb4_master_stb,   // WB write enable
+  output [P_GDIV_FACTORS_MSB:0] o_wb4_master_data,  // WB data, result
+  input                         i_wb4_master_stall, // WB stall, not ready
+  input                         i_wb4_master_ack,   // WB ack, strobe acknowledge
   // Wishbone Pipeline Slave Verification Agent Stubs
   input  cyc_i, //
   input  adr_i, //
@@ -106,18 +106,21 @@ module TB_TOP #(
   // Description : Instance of the CLU implementation.
   ///////////////////////////////////////////////////////////////////////////////
   Goldschmidt_Integer_Divider_Parallel #(
-    // Use defaults
+    .P_GDIV_FACTORS_MSB(P_GDIV_FACTORS_MSB), 
+    .P_GDIV_FRAC_LENGTH(P_GDIV_FRAC_LENGTH),
+    .P_GDIV_CONV_BITS(P_GDIV_CONV_BITS),
+    .P_GDIV_ROUND_LVL(P_GDIV_ROUND_LVL)
   ) dut (
     // Component's clocks and resets
-    .i_clk(i_clk),               // clock
+    .i_clk(i_clk),        // clock
     .i_rst(i_reset_sync), // reset
     // Wishbone(Pipeline) Slave Interface
-    .i_wb4s_cyc(1'b1),     // WB stb, valid strobe
+    .i_wb4s_cyc(1'b1),                // WB stb, valid strobe
     .i_wb4s_stb(i_wb4_slave_stb),     // WB stb, valid strobe
     .i_wb4s_data(i_wb4_slave_data),   // WB data 0
     .i_wb4s_tgc(i_wb4_slave_tgd),     // WB data tag, 0=add 1=substract
     .o_wb4s_stall(o_wb4_slave_stall), // WB stall, not ready
-    .o_wb4s_ack(o_wb4_master_stb),     // WB write enable
+    .o_wb4s_ack(o_wb4_master_stb),    // WB write enable
     .o_wb4s_data(o_wb4_master_data)   // WB data, result
   );
 

@@ -39,13 +39,17 @@
 //                targets integer numbers.
 //
 // Additional Comments:
-// 
+//   Suggested values for 32bit integer division
+//     P_GDIV_FACTORS_MSB = 31,                   
+//     P_GDIV_FRAC_LENGTH = P_GDIV_FACTORS_MSB+1,
+//     P_GDIV_CONV_BITS   = 8,                   
+//     P_GDIV_ROUND_LVL   = 3                    
 /////////////////////////////////////////////////////////////////////////////////
 module Goldschmidt_Integer_Divider_Parallel #(
-  parameter integer P_GDIV_FACTORS_MSB = 31,                   // The MSB of each division factor.
+  parameter integer P_GDIV_FACTORS_MSB = 7,                    // The MSB of each division factor.
   parameter integer P_GDIV_FRAC_LENGTH = P_GDIV_FACTORS_MSB+1, // he amount of bits after the fixed point.
-  parameter integer P_GDIV_CONV_BITS   = 8,                    // Bits that must = 0 to determine convergence
-  parameter integer P_GDIV_ROUND_LVL   = 3                     // Bits after fixed point that need to be '1' to round up result.
+  parameter integer P_GDIV_CONV_BITS   = 1,                    // Bits that must = 0 to determine convergence
+  parameter integer P_GDIV_ROUND_LVL   = 1                     // Bits after fixed point that need to be '1' to round up result.
 )(
   // Component's clocks and resets
   input i_clk, // clock

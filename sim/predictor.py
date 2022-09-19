@@ -106,37 +106,34 @@ class predictor(UVMSubscriber):
              t: wb4_slave_seq (Sequence Item)
         """
 
-        #self.num_items = self.num_items+1
-        #print("Item number: ", self.num_items)
-
-        if (self.data_length >= 8):
-            # translate data length from width in bits to width in hex characters
-            data_length = int(self.data_length / (8))
-        else:
-            data_length = self.data_length
-
-        dividend, divisor = self.int_to_hex(t.data_in, data_length)
+        dividend, divisor = self.int_to_hex(t.data_in, int(self.data_length/2))
 
         if (t.data_tag == 0):
             # generate the result, convert it to hex, remove the '0x' appended by hex() and remove the overflow bit.
-            if (int(divisor, 16) != 0):
-                result_int = int(dividend, 16) / int(divisor, 16)
+            if (divisor != 0):
+                result_int = dividend / divisor
             else:
                 result_int = -1
 
 
         if (t.data_tag == 2):
             # generate the result, convert it to hex, remove the '0x' appended by hex() and remove the overflow bit.
-            if (int(divisor, 16) > 0):
-                result_int = int(dividend, 16) % int(divisor, 16)
+            if (divisor > 0):
+                result_int = dividend % divisor
             else:
                 result_int = -1
 
         if (t.data_tag == 1):
-            if (int(divisor, 16) != 0):
-                result_int = int(dividend, 16) / int(divisor, 16)
+            if (divisor != 0):
+                result_int = dividend / divisor
             else:
                 result_int = -1
+
+        uvm_info(self.get_type_name(), sv.sformatf("write() \
+            \n  Dividen: %d <=> 0x%h \
+            \n  Divisor: %d <=> 0x%h \
+            \n  Result : %d <=> 0x%h",\
+            dividend, dividend, divisor, divisor, int(math.ceil(result_int)), int(math.ceil(result_int))), UVM_NONE)
 
         self.create_response(int(math.ceil(result_int)))
 
@@ -172,14 +169,21 @@ class predictor(UVMSubscriber):
              hex_value: a hex string without '0x' preappended
              hex_length: Number of bits used to represent the hex value
         """
-        data_in = hex(int_value).lstrip("0x").rstrip("L")
+        lower_mask = pow(2, factors_length)-1
+        upper_mask = lower_mask << factors_length
 
-        if (len(data_in) < factors_length*2):
-            for x in range(0, (factors_length*2)-len(data_in)):
-                data_in = "0"+data_in
+        dividend = int_value & lower_mask
+        divisor  = int_value & upper_mask
+        divisor  = divisor >> factors_length
 
-        dividend = data_in[factors_length:]
-        divisor = data_in[:factors_length]
+        # uvm_info(self.get_type_name(), sv.sformatf("int_to_hex() \
+        #     \n Input vector: %d <=> 0x%h \
+        #     \n  Data Length: %d \
+        #     \n   Upper mask: 0x%h \
+        #     \n   Lower mask: 0x%h \
+        #     \n      Dividen: %d <=> 0x%h \
+        #     \n      Divisor: %d <=> 0x%h",\
+        #     int_value, int_value,factors_length, upper_mask, lower_mask, dividend, dividend, divisor, divisor), UVM_NONE)
 
         return dividend, divisor
 

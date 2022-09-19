@@ -198,7 +198,7 @@ class default_test(test_base):
     async def stimulate_slave_intfc(self):
         #
         self.count = int(pow(2, (self.tb_env.cfg.DUT_SLAVE_DATA_IN_LENGTH)/2)-1)
-        data_inc   = 2
+        data_inc   = 3
         stop_count = self.count + (self.tb_env.cfg.data_bins_range[1] - self.tb_env.cfg.data_bins_range[0])/data_inc
 
         #
