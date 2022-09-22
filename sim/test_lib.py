@@ -41,21 +41,18 @@
 # Additional Comments:
 #   Contains the test base and tests.
 ##################################################################################################
-
+# Framework Libs
 import cocotb
 from cocotb.triggers import Timer
-
+# UVM Libs
 from uvm import *
-from wb4_master_seq import *
-from wb4_master_agent import *
-from wb4_master_config import *
-from wb4_slave_seq import *
-from wb4_slave_agent import *
-from wb4_slave_config import *
+from wb4s_seq import *
+from wb4s_agent import *
+from wb4s_config import *
 from tb_env_config import *
 from tb_env import *
 from predictor import *
-
+# General Python Libs
 import math
 
 class test_base(UVMTest):
@@ -71,8 +68,7 @@ class test_base(UVMTest):
         self.err_msg = ""
         self.tb_env = None
         self.tb_env_config = None
-        self.wb4_master_agent_cfg = None
-        self.wb4_slave_agent_cfg = None
+        self.wb4s_agent_cfg = None
         self.printer = None
 
     def build_phase(self, phase):
@@ -88,39 +84,25 @@ class test_base(UVMTest):
         self.tb_env_config = tb_env_config.type_id.create("tb_env_config", self)
         self.tb_env_config.has_scoreboard           = True
         self.tb_env_config.has_predictor            = True
-        self.tb_env_config.has_functional_coverage  = True
+        self.tb_env_config.has_functional_coverage  = False
         self.tb_env_config.DUT_SLAVE_DATA_IN_LENGTH = arr[0]
-        self.tb_env_config.data_bins_range          = [0, 36]
-
-        # Create the instruction agent
-        self.wb4_master_agent_cfg = wb4_master_config.type_id.create("wb4_master_agent_cfg", self)
-        arr = []
-        # Get the instruction interface created at top
-        if UVMConfigDb.get(None, "*", "vif_master", arr) is True:
-            UVMConfigDb.set(self, "*", "vif_master", arr[0])
-            # Make this agent's interface the interface connected at top
-            self.wb4_master_agent_cfg.vif         = arr[0]
-            self.wb4_master_agent_cfg.has_driver  = 1
-            self.wb4_master_agent_cfg.has_monitor = 1
-        else:
-            uvm_fatal("NOVIF", "Could not get vif_master from config DB")
+        self.tb_env_config.data_bins_range          = [50000, 50030]
 
         # Create the Mem Read agent
-        self.wb4_slave_agent_cfg = wb4_slave_config.type_id.create("wb4_slave_agent_cfg", self)
+        self.wb4s_agent_cfg = wb4s_config.type_id.create("wb4s_agent_cfg", self)
         arr = []
         # Get the instruction interface created at top
         if UVMConfigDb.get(None, "*", "vif_slave", arr) is True:
             UVMConfigDb.set(self, "*", "vif_slave", arr[0])
             # Make this agent's interface the interface connected at top
-            self.wb4_slave_agent_cfg.vif         = arr[0]
-            self.wb4_slave_agent_cfg.has_driver  = 1
-            self.wb4_slave_agent_cfg.has_monitor = 1
+            self.wb4s_agent_cfg.vif         = arr[0]
+            self.wb4s_agent_cfg.has_driver  = 1
+            self.wb4s_agent_cfg.has_monitor = 1
         else:
             uvm_fatal("NOVIF", "Could not get vif_slave from config DB")
 
         # Make this instruction agent the test bench config agent
-        self.tb_env_config.wb4_master_agent_cfg = self.wb4_master_agent_cfg
-        self.tb_env_config.wb4_slave_agent_cfg = self.wb4_slave_agent_cfg
+        self.tb_env_config.wb4s_agent_cfg = self.wb4s_agent_cfg
 
         # Place the tn_env_config in the Db. The tb_env will fetch this in its build phase .
         UVMConfigDb.set(self, "*", "tb_env_config", self.tb_env_config)
@@ -156,10 +138,13 @@ class test_base(UVMTest):
             uvm_fatal(self.get_type_name(), "UVM TEST FAIL\n" +
                 self.err_msg)
 
+        cov_print = 0 # 
         # Coverage Report
-        #if (cov_print == 1):
-        #    coverage.coverage_db.report_coverage(print, bins=False)
-        #    coverage.coverage_db.report_coverage(print, bins=True)
+        if (cov_print == 1):
+            # Print coverage bins at the end of the sim
+            coverage.coverage_db.report_coverage(print, bins=False)
+            coverage.coverage_db.report_coverage(print, bins=True)
+
         if (self.tb_env_config.has_functional_coverage):
             coverage.coverage_db.export_to_yaml(filename="coverage_result.yml")
 
@@ -187,10 +172,9 @@ class default_test(test_base):
 
         # Call and fork the methods that create sequences to feed the sequencers
         slave_proc  = cocotb.fork(self.stimulate_slave_intfc())
-        master_proc = cocotb.fork(self.stimulate_master_intfc())
 
-        await sv.fork_join_any([slave_proc, master_proc])
-        await Timer(12, "NS") # Allow some clocks for evething to settle
+        await Timer(16, "NS") # Allow some clocks for evething to settle
+        await sv.fork_join_any([slave_proc])
 
         phase.drop_objection(self, "default_test drop objection")
 
@@ -198,85 +182,112 @@ class default_test(test_base):
     async def stimulate_slave_intfc(self):
         #
         self.count = int(pow(2, (self.tb_env.cfg.DUT_SLAVE_DATA_IN_LENGTH)/2)-1)
-        data_inc   = 3
+        data_inc   = 2
         stop_count = self.count + (self.tb_env.cfg.data_bins_range[1] - self.tb_env.cfg.data_bins_range[0])/data_inc
 
         #
-        wb4_slave_sqr = self.tb_env.wb4_slave_agent.sqr
+        wb4s_sqr = self.tb_env.wb4s_agent.sqr
 
         # Create transactions to stimulate the slave interface (calc division)
-        increment_sum_seq          = wb4_slave_single_write_seq("increment_sum_seq")
+        increment_sum_seq          = wb4s_single_write_seq("increment_sum_seq")
         increment_sum_seq.data     = self.count * 2
         increment_sum_seq.strobe   = 1
         increment_sum_seq.cycle    = 1
-        increment_sum_seq.data_tag = 0
+        increment_sum_seq.cycle_tag = 0
 
         while self.count < stop_count:
-            await increment_sum_seq.start(wb4_slave_sqr)
+            await increment_sum_seq.start(wb4s_sqr)
             # Count decrement data for next sequence.
             self.count += 1
-            increment_sum_seq          = wb4_slave_single_write_seq("increment_sum_seq")
+            increment_sum_seq          = wb4s_single_write_seq("increment_sum_seq")
             increment_sum_seq.cycle    = 1
             increment_sum_seq.strobe   = 1
-            increment_sum_seq.data_tag = 0
-            increment_sum_seq.data     = self.count * data_inc
+            increment_sum_seq.cycle_tag = 0
+            increment_sum_seq.data     = ((self.count * data_inc) + self.tb_env.cfg.data_bins_range[0]) << round(data_inc/2)
+            #increment_sum_seq.data     = self.count * data_inc
+            data_inc += 1
 
-
-        await increment_sum_seq.start(wb4_slave_sqr)
+        
+        await increment_sum_seq.start(wb4s_sqr)
 
 
         # Re-start the count
-        self.count = int(pow(2, (self.tb_env.cfg.DUT_SLAVE_DATA_IN_LENGTH)/2)-1)
+        self.count = int(pow(2, (self.tb_env.cfg.DUT_SLAVE_DATA_IN_LENGTH)/2))
 
         # Create transactions to stimulate the slave interface (calc remainder)
-        increment_sum_seq          = wb4_slave_single_write_seq("increment_sum_seq")
+        increment_sum_seq          = wb4s_single_write_seq("increment_sum_seq")
         increment_sum_seq.data     = self.count * 2
         increment_sum_seq.strobe   = 1
         increment_sum_seq.cycle    = 1
-        increment_sum_seq.data_tag = 2
+        increment_sum_seq.cycle_tag = 1
 
         while self.count < stop_count:
-            await increment_sum_seq.start(wb4_slave_sqr)
+            await increment_sum_seq.start(wb4s_sqr)
             # Count decrement data for next sequence.
             self.count += 1
-            increment_sum_seq          = wb4_slave_single_write_seq("increment_sum_seq")
+            increment_sum_seq          = wb4s_single_write_seq("increment_sum_seq")
             increment_sum_seq.cycle    = 1
             increment_sum_seq.strobe   = 1
-            increment_sum_seq.data_tag = 2
+            increment_sum_seq.cycle_tag = 1
             increment_sum_seq.data     = (self.count * data_inc)+1
 
 
-        await increment_sum_seq.start(wb4_slave_sqr)
+        await increment_sum_seq.start(wb4s_sqr)
+
+        # Re-start the count
+        self.count = int(pow(2, (self.tb_env.cfg.DUT_SLAVE_DATA_IN_LENGTH)/2)+1)
+
+        # Create transactions to stimulate the slave interface (calc remainder)
+        increment_sum_seq          = wb4s_single_write_seq("increment_sum_seq")
+        increment_sum_seq.data     = self.count * 2
+        increment_sum_seq.strobe   = 1
+        increment_sum_seq.cycle    = 1
+        increment_sum_seq.cycle_tag = 2
+
+        while self.count < stop_count:
+            await increment_sum_seq.start(wb4s_sqr)
+            # Count decrement data for next sequence.
+            self.count += 1
+            increment_sum_seq          = wb4s_single_write_seq("increment_sum_seq")
+            increment_sum_seq.cycle    = 1
+            increment_sum_seq.strobe   = 1
+            increment_sum_seq.cycle_tag = 2
+            increment_sum_seq.data     = (self.count * data_inc)+1
+
+
+        await increment_sum_seq.start(wb4s_sqr)
+
+        # Re-start the count
+        self.count = int(pow(2, (self.tb_env.cfg.DUT_SLAVE_DATA_IN_LENGTH)/2)+4)
+
+        # Create transactions to stimulate the slave interface (calc remainder)
+        increment_sum_seq          = wb4s_single_write_seq("increment_sum_seq")
+        increment_sum_seq.data     = self.count * 2
+        increment_sum_seq.strobe   = 1
+        increment_sum_seq.cycle    = 1
+        increment_sum_seq.cycle_tag = 3
+
+        while self.count < stop_count:
+            await increment_sum_seq.start(wb4s_sqr)
+            # Count decrement data for next sequence.
+            self.count += 1
+            increment_sum_seq          = wb4s_single_write_seq("increment_sum_seq")
+            increment_sum_seq.cycle    = 1
+            increment_sum_seq.strobe   = 1
+            increment_sum_seq.cycle_tag = 3
+            increment_sum_seq.data     = (self.count * data_inc)+1
+
+
+        await increment_sum_seq.start(wb4s_sqr)
 
         # de-assert the CYC and STB signals
-        increment_sum_seq          = wb4_slave_single_write_seq("increment_sum_seq")
+        increment_sum_seq          = wb4s_single_write_seq("increment_sum_seq")
         increment_sum_seq.cycle    = 0
         increment_sum_seq.strobe   = 0
         increment_sum_seq.data_tag = 0
         increment_sum_seq.data     = 51966 #0xCAFE
 
-        await increment_sum_seq.start(wb4_slave_sqr)
-
-
-    async def stimulate_master_intfc(self):
-        #
-        wb4_master_sqr = self.tb_env.wb4_master_agent.sqr
-        # Transactions to stimulate the master interface (apply backpreassure)
-        backpreassure_seq             = wb4_master_single_write_seq("backpreassure_seq")
-        backpreassure_seq.stall       = self.stall
-        backpreassure_seq.acknowledge = self.acknowledge
-        self.stall       = 1
-        self.acknowledge = 0
-
-        while (self.count > 0):
-            #
-            await backpreassure_seq.start(wb4_master_sqr)
-            # Removes backpreassure and acknowledges data
-            backpreassure_seq             = wb4_master_single_write_seq("backpreassure_seq")
-            backpreassure_seq.stall       = self.stall
-            backpreassure_seq.acknowledge = self.acknowledge
-            self.stall       = 0
-            self.acknowledge = 1
+        await increment_sum_seq.start(wb4s_sqr)
 
 
 uvm_component_utils(default_test)

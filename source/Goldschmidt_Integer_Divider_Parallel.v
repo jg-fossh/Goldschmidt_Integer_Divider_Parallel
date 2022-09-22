@@ -42,14 +42,14 @@
 //   Suggested values for 32bit integer division
 //     P_GDIV_FACTORS_MSB = 31,                   
 //     P_GDIV_FRAC_LENGTH = P_GDIV_FACTORS_MSB+1,
-//     P_GDIV_CONV_BITS   = 8,                   
-//     P_GDIV_ROUND_LVL   = 3                    
+//     P_GDIV_CONV_BITS   = 8 to 12,                   
+//     P_GDIV_ROUND_LVL   = 3 to 4                    
 /////////////////////////////////////////////////////////////////////////////////
 module Goldschmidt_Integer_Divider_Parallel #(
-  parameter integer P_GDIV_FACTORS_MSB = 7,                    // The MSB of each division factor.
+  parameter integer P_GDIV_FACTORS_MSB = 31,                    // The MSB of each division factor.
   parameter integer P_GDIV_FRAC_LENGTH = P_GDIV_FACTORS_MSB+1, // he amount of bits after the fixed point.
-  parameter integer P_GDIV_CONV_BITS   = 1,                    // Bits that must = 0 to determine convergence
-  parameter integer P_GDIV_ROUND_LVL   = 1                     // Bits after fixed point that need to be '1' to round up result.
+  parameter integer P_GDIV_CONV_BITS   = 16,                    // Bits that must = 0 to determine convergence
+  parameter integer P_GDIV_ROUND_LVL   = 3                     // Bits after fixed point that need to be '1' to round up result.
 )(
   // Component's clocks and resets
   input i_clk, // clock
@@ -73,16 +73,16 @@ module Goldschmidt_Integer_Divider_Parallel #(
   ///////////////////////////////////////////////////////////////////////////////
   initial begin
     if (P_GDIV_FACTORS_MSB < 7)
-      $display("\n     Error-Type : Parameter Out of Range \n     Error-Msg  : P_GDIV_FACTORS_MSB should be equal or greater than 7. \n");
+      $display("\nError-Type : Parameter Out of Range\nError-Msg  : P_GDIV_FACTORS_MSB should be equal or greater than 7. \n");
 
     if (P_GDIV_FRAC_LENGTH == 0)
-      $display("\n     Error-Type : Parameter Out of Range \n     Error-Msg  : P_GDIV_FRAC_LENGTH must be greater than 0. \n");
+      $display("\nError-Type : Parameter Out of Range\nError-Msg  : P_GDIV_FRAC_LENGTH must be greater than 0. \n");
 
     if (P_GDIV_CONV_BITS < 1)
-      $display("\n     Error-Type : Parameter Out of Range \n     Error-Msg  : P_GDIV_RESULT_SIZE must be greater than 0. \n");
+      $display("\nError-Type : Parameter Out of Range\nError-Msg  : P_GDIV_RESULT_SIZE must be greater than 0. \n");
 
     if (P_GDIV_ROUND_LVL < 1)
-      $display("\n     Error-Type : Parameter Out of Range \n     Error-Msg  : P_GDIV_RESULT_SIZE must be greater than 0. \n");
+      $display("\nError-Type : Parameter Out of Range\nError-Msg  : P_GDIV_RESULT_SIZE must be greater than 0. \n");
   end
 
   ///////////////////////////////////////////////////////////////////////////////
@@ -108,29 +108,6 @@ module Goldschmidt_Integer_Divider_Parallel #(
   endfunction // F_ARRAY_HIGH
 
   ///////////////////////////////////////////////////////////////////////////////
-  // Function    : EE Look Up Table
-  // Description : Calculates the length of the Power of 10 Look Up Table.
-  ///////////////////////////////////////////////////////////////////////////////
-  function automatic [P_GDIV_FACTORS_MSB:0] F_EE_LUT (
-    input integer one_tength,
-    input integer nth_iteration
-  );
-    // This function's variables
-    integer hh;
-
-    begin
-      // Fill the LUT wih starting at 0.1 to 10^(-nth_iteration)
-      F_EE_LUT = one_tength;
-      if (nth_iteration > 0) begin
-        for (hh = 1; hh < nth_iteration; hh = hh+1) begin
-          // Each entry is ten times smaller than the previous.
-          F_EE_LUT = F_EE_LUT / 10;
-        end
-      end
-    end
-  endfunction // F_EE_LUT
-
-  ///////////////////////////////////////////////////////////////////////////////
   // Function    : Two * Entered Exponent
   // Description : Calculates 2EE(input)
   ///////////////////////////////////////////////////////////////////////////////
@@ -151,6 +128,29 @@ module Goldschmidt_Integer_Divider_Parallel #(
   endfunction // F_TWO_EE
 
   ///////////////////////////////////////////////////////////////////////////////
+  // Function    : EE Look Up Table
+  // Description : Calculates the length of the Power of 10 Look Up Table.
+  ///////////////////////////////////////////////////////////////////////////////
+  function automatic [((P_GDIV_FACTORS_MSB+1)*2)-P_GDIV_FRAC_LENGTH-1:0] F_EE_LUT (
+    input integer one_tength,
+    input integer nth_iteration
+  );
+    // This function's variables
+    integer hh;
+
+    begin
+      // Fill the LUT wih starting at 0.1 to 10^(-nth_iteration)
+      F_EE_LUT = one_tength;
+      if (nth_iteration > 0) begin
+        for (hh = 1; hh < nth_iteration; hh = hh+1) begin
+          // Each entry is ten times smaller than the previous.
+          F_EE_LUT = F_EE_LUT / 10;
+        end
+      end
+    end
+  endfunction // F_EE_LUT
+
+  ///////////////////////////////////////////////////////////////////////////////
   // Internal Parameters Declaration
   ///////////////////////////////////////////////////////////////////////////////
   // Division Process signals indexing constants
@@ -160,6 +160,7 @@ module Goldschmidt_Integer_Divider_Parallel #(
   localparam integer L_PRODUCT_MSB      = (P_GDIV_FACTORS_MSB+1)+((P_GDIV_FRAC_LENGTH)*2)-1;
   localparam integer L_STEP_PRODUCT_LSB = P_GDIV_FRAC_LENGTH;
   // LookUp Table Constants
+  localparam integer L_LUT_MSB     = ((P_GDIV_FACTORS_MSB+1)*2)-P_GDIV_FRAC_LENGTH-1;
   localparam integer L_NINE_NIBLES = ((P_GDIV_FACTORS_MSB+1)/4)-1;
   localparam integer L_ONE_TENGTH  = {4'h1, {L_NINE_NIBLES{4'h9}}};
   localparam integer L_ARRAY_HIGH  = F_ARRAY_HIGH(L_ONE_TENGTH);
@@ -188,7 +189,7 @@ module Goldschmidt_Integer_Divider_Parallel #(
                                             -(i_wb4s_data[L_FACTOR1_MSB:L_FACTOR1_LSB]) :
                                             i_wb4s_data[L_FACTOR1_MSB:L_FACTOR1_LSB];
   // Corner Cases
-  wire w_less_than          = (w_dividend > w_divisor) ? 1'b0 : 1'b1;
+  wire w_less_than          = (w_dividend < w_divisor) ? 1'b1 : 1'b0;
   wire w_divisor_zero       = i_wb4s_data[L_FACTOR1_MSB:L_FACTOR1_LSB]==0 ? 1'b1 : 1'b0;
   wire w_divisor_is_one     = w_divisor == 1 ? 1'b1 : 1'b0;
   wire w_divisor_is_neg_one = w_divisor == -1 ? 1'b1 : 1'b0;
@@ -212,8 +213,8 @@ module Goldschmidt_Integer_Divider_Parallel #(
       r_product0[L_PRODUCT_MSB:L_STEP_PRODUCT_LSB];
   // LookUp Table signals
   integer                       iter;
-  reg     [31:0]                r_lut_value; // The calculation is done in integers
-  wire    [L_MUL_FACTORS_MSB:0] w_lut_value = {{(P_GDIV_FACTORS_MSB+1){1'b0}}, r_lut_value[31 -: P_GDIV_FRAC_LENGTH]}; // Fixed point adjust
+  reg     [L_LUT_MSB:0]         r_lut_value; // The calculation is done in integers
+  wire    [L_MUL_FACTORS_MSB:0] w_lut_value = {{(P_GDIV_FACTORS_MSB+1){1'b0}}, r_lut_value}; // Fixed point adjust
   //
   wire [L_MUL_FACTORS_MSB:0] w_multiplier = 
     (r_div_acc_state==1'b1) ? w_lut_value :
@@ -242,7 +243,7 @@ module Goldschmidt_Integer_Divider_Parallel #(
   //               step iterations until divisor converges to a value close to
   //               "1".
   ///////////////////////////////////////////////////////////////////////////////
-  always @(posedge i_clk) begin
+  always @(posedge i_clk) begin : Divider_Accumulator_Process
     if (i_rst == 1'b1 || i_wb4s_cyc == 1'b0) begin
       r_div_acc_state  <= S_INITIATE;
       r_divisor        <= 0;
@@ -357,7 +358,7 @@ module Goldschmidt_Integer_Divider_Parallel #(
         end
       endcase
     end
-  end
+  end // Divider_Accumulator_Process
 
   // WB4 Master Write Interface wires
   assign o_wb4s_ack  = (r_calc_remainder==1'b0 && r_div_acc_state==1'b0) ? w_converged : r_converged;
@@ -375,8 +376,8 @@ module Goldschmidt_Integer_Divider_Parallel #(
     end
     else begin
       r_lut_value = F_EE_LUT(L_ONE_TENGTH, 1);
-      for (iter = 2; iter <= L_ARRAY_HIGH; iter = iter+1) begin
-        if (w_divisor > F_TWO_EE(iter)) begin
+      for (iter = 2; iter <= L_ARRAY_HIGH+1; iter = iter+1) begin
+        if (w_divisor >= F_TWO_EE(iter-1)) begin
            r_lut_value = F_EE_LUT(L_ONE_TENGTH, iter);
         end
       end

@@ -53,8 +53,7 @@ from uvm.base import *
 from uvm.comps import *
 from uvm.tlm1 import *
 from uvm.macros import *
-from wb4_master_seq import *
-from wb4_slave_seq import *
+from wb4s_seq import *
 
 class predictor(UVMSubscriber):
     """
@@ -103,7 +102,7 @@ class predictor(UVMSubscriber):
              sent to the scoreboard.
 
            Args:
-             t: wb4_slave_seq (Sequence Item)
+             t: wb4s_seq (Sequence Item)
         """
 
         dividend, divisor = self.int_to_hex(t.data_in, int(self.data_length/2))
@@ -133,31 +132,31 @@ class predictor(UVMSubscriber):
             \n  Dividen: %d <=> 0x%h \
             \n  Divisor: %d <=> 0x%h \
             \n  Result : %d <=> 0x%h",\
-            dividend, dividend, divisor, divisor, int(math.ceil(result_int)), int(math.ceil(result_int))), UVM_NONE)
+            dividend, dividend, divisor, divisor, math.floor(result_int), math.floor(result_int)), UVM_NONE)
 
-        self.create_response(int(math.ceil(result_int)))
+        self.create_response(t, math.floor(result_int))
 
 
-    def create_response(self, result):
+    def create_response(self, t, result):
         """
            Function: create_response
 
            Definition: Creates a response transaction and updates the pc counter.
 
            Args:
-             t: wb4_master_seq (Sequence Item)
+             t: wb4s_seq (Sequence Item)
         """
-        write_seq0 = wb4_master_seq("write_seq0")
-        write_seq0.data_out    = result
-        write_seq0.cycle       = 1
-        write_seq0.strobe      = 1
-        write_seq0.acknowledge = 1
-        tr = []
-        tr = write_seq0
+        tr = wb4s_seq("tr")
+        tr = t
+        tr.data_out    = result
+        tr.acknowledge = 1
+        #tr = []
+        #tr = t
+        
         self.ap.write(tr)
 
 
-    def int_to_hex(self, int_value, factors_length):
+    def int_to_hex(self, decimal_value, factors_length):
         """
            Function: hex_to_int
 
@@ -172,8 +171,8 @@ class predictor(UVMSubscriber):
         lower_mask = pow(2, factors_length)-1
         upper_mask = lower_mask << factors_length
 
-        dividend = int_value & lower_mask
-        divisor  = int_value & upper_mask
+        dividend = decimal_value & lower_mask
+        divisor  = decimal_value & upper_mask
         divisor  = divisor >> factors_length
 
         # uvm_info(self.get_type_name(), sv.sformatf("int_to_hex() \
