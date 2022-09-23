@@ -1,102 +1,109 @@
 [*]
 [*] GTKWave Analyzer v3.3.111 (w)1999-2020 BSI
-[*] Sun Sep 18 23:41:14 2022
+[*] Fri Sep 23 18:47:20 2022
 [*]
-[dumpfile] "/home/jota/usb_ssd/Sandbox/jg-fossh/Goldschmidt_Integer_Divider_Parallel/sim/dump.fst"
-[dumpfile_mtime] "Sun Sep 18 23:41:12 2022"
-[dumpfile_size] 330
-[savefile] "/home/jota/usb_ssd/Sandbox/jg-fossh/Goldschmidt_Integer_Divider_Parallel/sim/wave32.gtkw"
-[timestart] 9650
-[size] 1366 719
-[pos] -1 -1
-*-12.021453 25670 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[dumpfile] "/home/jota/Sandbox/Goldschmidt_Integer_Divider_Parallel/sim/dump.fst"
+[dumpfile_mtime] "Fri Sep 23 18:40:28 2022"
+[dumpfile_size] 8828
+[savefile] "/home/jota/Sandbox/Goldschmidt_Integer_Divider_Parallel/sim/2wave32.gtkw"
+[timestart] 18260000000
+[size] 1920 1031
+[pos] 0 0
+*-31.126781 19330000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] .
 [treeopen] .TB_TOP.
 [sst_width] 39
-[signals_width] 272
+[signals_width] 341
 [sst_expanded] 0
-[sst_vpaned_height] 197
+[sst_vpaned_height] 306
 @420
 TB_TOP.dut.L_ARRAY_HIGH
 TB_TOP.dut.L_FACTOR1_LSB
 TB_TOP.dut.L_FACTOR1_MSB
+TB_TOP.dut.L_LUT_MSB
 TB_TOP.dut.L_MUL_FACTORS_MSB
 TB_TOP.dut.L_NINE_NIBLES
 TB_TOP.dut.L_NUMBER_TWO_EXT
 TB_TOP.dut.L_ONE_TENGTH
 TB_TOP.dut.L_PRODUCT_MSB
-TB_TOP.dut.L_ROUND_LSB
+TB_TOP.dut.L_QUO_LIMIT
+TB_TOP.dut.L_REM_LIMIT
 TB_TOP.dut.L_STEP_PRODUCT_LSB
 TB_TOP.dut.L_TWOS_LEADING_ZEROS
-TB_TOP.dut.L_ZERO_FILLER
-TB_TOP.dut.P_GDIV_CONV_BITS
 TB_TOP.dut.P_GDIV_FACTORS_MSB
 TB_TOP.dut.P_GDIV_FRAC_LENGTH
 TB_TOP.dut.P_GDIV_ROUND_LVL
+TB_TOP.dut.iter
+@200
+-
 @28
-TB_TOP.dut.S_INITIATE
-TB_TOP.dut.S_ITERATE
 TB_TOP.dut.i_clk
 TB_TOP.dut.i_rst
 TB_TOP.dut.i_wb4s_cyc
+TB_TOP.dut.i_wb4s_stb
 @22
 TB_TOP.dut.i_wb4s_data[63:0]
-@28
-TB_TOP.dut.i_wb4s_stb
+@800028
 TB_TOP.dut.i_wb4s_tgc[1:0]
-@420
-TB_TOP.dut.iter
 @28
-TB_TOP.dut.o_wb4s_ack
-@24
-TB_TOP.dut.o_wb4s_data[31:0]
+(0)TB_TOP.dut.i_wb4s_tgc[1:0]
+(1)TB_TOP.dut.i_wb4s_tgc[1:0]
+@1001200
+-group_end
 @28
 TB_TOP.dut.o_wb4s_stall
+TB_TOP.dut.o_wb4s_ack
+@420
+TB_TOP.dut.o_wb4s_data[31:0]
+@200
+-
+@28
+TB_TOP.dut.s_initiate
+TB_TOP.dut.s_iterate
 TB_TOP.dut.r_calc_remainder
-TB_TOP.dut.r_converged
-TB_TOP.dut.r_div_acc_state
-@40000024
-[fpshift_count] 32
-TB_TOP.dut.r_dividend_acc[63:0]
-@22
-TB_TOP.dut.r_divisor[31:0]
-TB_TOP.dut.r_lut_value[31:0]
-@28
-TB_TOP.dut.r_neg_result
-@40000420
-[fpshift_count] 64
-TB_TOP.dut.r_product0[95:0]
-[fpshift_count] 64
-TB_TOP.dut.r_product1[95:0]
-@28
-TB_TOP.dut.w_ceil
-TB_TOP.dut.w_converged
-@24
-TB_TOP.dut.w_dividend[31:0]
-@40000024
-[fpshift_count] 32
-TB_TOP.dut.w_dividend_acc[63:0]
-@22
-TB_TOP.dut.w_divisor[31:0]
-@40000024
-[fpshift_count] 32
-TB_TOP.dut.w_divisor_acc[63:0]
-@28
 TB_TOP.dut.w_divisor_is_neg_one
 TB_TOP.dut.w_divisor_is_one
 TB_TOP.dut.w_divisor_zero
 TB_TOP.dut.w_equal_factors
 TB_TOP.dut.w_less_than
+@420
+TB_TOP.dut.r_divisor[31:0]
 @40000024
+[fpshift_count] 32
+TB_TOP.dut.r_lut_value[31:0]
+@28
+TB_TOP.dut.r_neg_result
+TB_TOP.dut.r_ack
+TB_TOP.dut.r_stall
+@200
+-
+@23
+TB_TOP.dut.r_div_step[7:0]
+@28
+TB_TOP.dut.w_converged
+@24
+TB_TOP.dut.w_dividend[31:0]
+TB_TOP.dut.w_divisor[31:0]
+@40000024
+[fpshift_count] 32
+TB_TOP.dut.w_dividend_acc[63:0]
+[fpshift_count] 32
+TB_TOP.dut.w_divisor_acc[63:0]
 [fpshift_count] 32
 TB_TOP.dut.w_lut_value[63:0]
 [fpshift_count] 32
-TB_TOP.dut.w_multiplier[63:0]
-@25
-TB_TOP.dut.w_result[31:0]
-TB_TOP.dut.w_result_mag[31:0]
-@40000024
-[fpshift_count] 32
 TB_TOP.dut.w_two_minus_divisor[63:0]
+[fpshift_count] 32
+TB_TOP.dut.w_multiplier[63:0]
+@22
+TB_TOP.dut.r_product0[95:0]
+TB_TOP.dut.r_product1[95:0]
+@28
+TB_TOP.dut.w_ceil
+TB_TOP.dut.r_rem_zero
+@420
+TB_TOP.dut.w_result_mag[31:0]
+TB_TOP.dut.w_result[31:0]
+TB_TOP.dut.r_1step_result[31:0]
 [pattern_trace] 1
 [pattern_trace] 0

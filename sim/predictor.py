@@ -107,7 +107,7 @@ class predictor(UVMSubscriber):
 
         dividend, divisor = self.int_to_hex(t.data_in, int(self.data_length/2))
 
-        if (t.data_tag == 0):
+        if (t.cycle_tag == 0):
             # generate the result, convert it to hex, remove the '0x' appended by hex() and remove the overflow bit.
             if (divisor != 0):
                 result_int = dividend / divisor
@@ -115,16 +115,23 @@ class predictor(UVMSubscriber):
                 result_int = -1
 
 
-        if (t.data_tag == 2):
+        if (t.cycle_tag == 2):
             # generate the result, convert it to hex, remove the '0x' appended by hex() and remove the overflow bit.
             if (divisor > 0):
                 result_int = dividend % divisor
             else:
                 result_int = -1
 
-        if (t.data_tag == 1):
+        if (t.cycle_tag == 1):
             if (divisor != 0):
                 result_int = dividend / divisor
+            else:
+                result_int = -1
+
+        if (t.cycle_tag == 3):
+            # generate the result, convert it to hex, remove the '0x' appended by hex() and remove the overflow bit.
+            if (divisor > 0):
+                result_int = dividend % divisor
             else:
                 result_int = -1
 
@@ -132,9 +139,9 @@ class predictor(UVMSubscriber):
             \n  Dividen: %d <=> 0x%h \
             \n  Divisor: %d <=> 0x%h \
             \n  Result : %d <=> 0x%h",\
-            dividend, dividend, divisor, divisor, math.floor(result_int), math.floor(result_int)), UVM_NONE)
+            dividend, dividend, divisor, divisor, round(result_int), round(result_int)), UVM_NONE)
 
-        self.create_response(t, math.floor(result_int))
+        self.create_response(t, round(result_int))
 
 
     def create_response(self, t, result):

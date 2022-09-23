@@ -30,63 +30,59 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 ##################################################################################################
-# File name     : top.py
-# Author        : Jose R Garcia
-# Created       : 2020/11/05 19:26:21
-# Last modified : 2021/09/26 09:36:40
-# Project Name  : Goldschmidt Integer Divider
-# Module Name   : top
-# Description   : Goldschmidt_Integer_Divider Test Top. Wraps the design units
-#                 into the test environment.
+# File name    : top.py
+# Author       : Jose R Garcia (jg-fossh@protonmail.com)
+# Project Name : Goldschmidt Integer Divider
+# Class Name   : top
+# Description  : Goldschmidt_Integer_Divider Test Top. Wraps the design units
+#                into the test environment.
 #
 # Additional Comments:
 #
 ##################################################################################################
 import random
-import cocotb
 import sys
 # Add the Wisbone Verification Agents directories.
-sys.path.append('../externals/uvm_python_Wishbone_Pipeline_Master/')
 sys.path.append('../externals/uvm_python_Wishbone_Pipeline_Slave/')
 # Import cocotb clock and timers
+import cocotb
 from cocotb.triggers import Timer
 from cocotb.clock import Clock
 from cocotb_coverage.coverage import *
 # Import uvm-python base items
+from uvm.base import UVMCoreService
 from uvm.base import run_test, UVMDebug
 from uvm.base.uvm_phase import UVMPhase
 from uvm.seq import UVMSequence
 # Import the Wisbone Verification Agents directories.
-from wb4_master_if import *
-from wb4_slave_if import *
+from wb4s_if import *
 # Import test bench files
 from tb_env_config import *
 from tb_env import *
 from test_lib import *
 
 
-async def initial_run_test(dut, vif_master, vif_slave):
+async def initial_run_test(dut, vif_slave):
     """
        Description: Places the virtual interfaces into the Config DB and await
        for the test to finish.
     """
-    from uvm.base import UVMCoreService
+    #from uvm.base import UVMCoreService
     cs_ = UVMCoreService.get()
-    UVMConfigDb.set(None, "*", "vif_master", vif_master)
     UVMConfigDb.set(None, "*", "vif_slave", vif_slave)
-    UVMConfigDb.set(None, "dut", "DUT_SLAVE_DATA_IN_LENGTH", len(dut.i_wb4_slave_data))
+    UVMConfigDb.set(None, "dut", "DUT_SLAVE_DATA_IN_LENGTH", len(dut.i_wb4s_data))
     await run_test()
 
 
-async def initial_reset(vif_master, vif_slave, dut):
+async def initial_reset(vif_slave, dut):
     """
        Description: Perform power on reset. Toggle reset signals and fork the
        test routines.
     """
     #await Timer(0, "NS")
-    vif_master.rst_i <= 1
-    await Timer(10, "NS")
-    vif_master.rst_i <= 0
+    vif_slave.rst_i <= 1
+    await Timer(10, "MS")
+    vif_slave.rst_i <= 0
 
 
 @cocotb.test()
@@ -95,44 +91,28 @@ async def top(dut):
 
     # Map the signals in the DUT to the verification agents interfaces
     slave_bus_map = { "clk_i": "i_clk",
-                      "rst_i": "i_reset_sync",
-                      "cyc_i": "cyc_i",
-                      "stb_i": "i_wb4_slave_stb",
-                      "dat_i": "i_wb4_slave_data",
-                      "dat_o": "dat_o",
+                      "rst_i": "i_rst",
+                      "cyc_i": "i_wb4s_cyc",
+                      "stb_i": "i_wb4s_stb",
+                      "dat_i": "i_wb4s_data",
+                      "dat_o": "o_wb4s_data",
                       "adr_i": "adr_i",
                       "we_i": "we_i",
                       "sel_i": "sel_i",
-                      "stall_o": "o_wb4_slave_stall",
-                      "ack_o": "o_wb4_slave_ack",
-                      "tga_o": "tga_o",
-                      "tgd_i": "i_wb4_slave_tgd",
+                      "stall_o": "o_wb4s_stall",
+                      "ack_o": "o_wb4s_ack",
+                      "tga_i": "tga_i",
+                      "tgd_i": "tgd_i",
                       "tgd_o": "tgd_o",
-                      "tgc_o": "tgc_o" }
+                      "tgc_i": "i_wb4s_tgc" }
 
-    master_bus_map = { "clk_i": "i_clk",
-                       "rst_i": "i_reset_sync",
-                       "adr_i": "adr_o",
-                       "dat_i": "dat_i",
-                       "dat_o": "o_wb4_master_data",
-                       "we_o": "we_o",
-                       "sel_o": "sel_o",
-                       "stb_o": "o_wb4_master_stb",
-                       "ack_i": "i_wb4_master_ack",
-                       "cyc_o": "cyc_o",
-                       "stall_i": "i_wb4_master_stall",
-                       "tga_o": "tga_o",
-                       "tgd_i": "tgd_i",
-                       "tgd_o": "tgd_o",
-                       "tgc_o": "tgc_o" }
+    vif_slave = wb4s_if(dut, slave_bus_map)
 
-    vif_master = wb4_master_if(dut, master_bus_map)
-    vif_slave = wb4_slave_if(dut, slave_bus_map)
-
-    # Create a 1000Mhz clock
-    clock = Clock(dut.i_clk, 1, units="ns")
-    proc_clk = cocotb.fork(clock.start(None, True))  # Start the clock
-    proc_reset = cocotb.fork(initial_reset(vif_master, vif_slave, dut))
-    proc_run_test = cocotb.fork(initial_run_test(dut, vif_master, vif_slave))
+    # Create a 1Mhz clock
+    clock = Clock(dut.i_clk, 1, units="ms")
+    # Fork process threads
+    proc_clk      = cocotb.fork(clock.start(None, True))  # Start the clock
+    proc_reset    = cocotb.fork(initial_reset(vif_slave, dut))
+    proc_run_test = cocotb.fork(initial_run_test(dut, vif_slave))
 
     await sv.fork_join([proc_run_test, proc_reset])

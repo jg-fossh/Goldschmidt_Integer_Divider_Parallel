@@ -41,14 +41,12 @@
 // Additional Comments:
 //   Suggested values for 32bit integer division
 //     P_GDIV_FACTORS_MSB = 31,                   
-//     P_GDIV_FRAC_LENGTH = P_GDIV_FACTORS_MSB+1,
-//     P_GDIV_CONV_BITS   = 8 to 12,                   
-//     P_GDIV_ROUND_LVL   = 3 to 4                    
+//     P_GDIV_FRAC_LENGTH = P_GDIV_FACTORS_MSB+1,           
+//     P_GDIV_ROUND_LVL   = 2 to 4                    
 /////////////////////////////////////////////////////////////////////////////////
 module Goldschmidt_Integer_Divider_Parallel #(
-  parameter integer P_GDIV_FACTORS_MSB = 31,                    // The MSB of each division factor.
+  parameter integer P_GDIV_FACTORS_MSB = 31,                   // The MSB of each division factor.
   parameter integer P_GDIV_FRAC_LENGTH = P_GDIV_FACTORS_MSB+1, // he amount of bits after the fixed point.
-  parameter integer P_GDIV_CONV_BITS   = 16,                    // Bits that must = 0 to determine convergence
   parameter integer P_GDIV_ROUND_LVL   = 3                     // Bits after fixed point that need to be '1' to round up result.
 )(
   // Component's clocks and resets
@@ -78,11 +76,8 @@ module Goldschmidt_Integer_Divider_Parallel #(
     if (P_GDIV_FRAC_LENGTH == 0)
       $display("\nError-Type : Parameter Out of Range\nError-Msg  : P_GDIV_FRAC_LENGTH must be greater than 0. \n");
 
-    if (P_GDIV_CONV_BITS < 1)
-      $display("\nError-Type : Parameter Out of Range\nError-Msg  : P_GDIV_RESULT_SIZE must be greater than 0. \n");
-
     if (P_GDIV_ROUND_LVL < 1)
-      $display("\nError-Type : Parameter Out of Range\nError-Msg  : P_GDIV_RESULT_SIZE must be greater than 0. \n");
+      $display("\nError-Type : Parameter Out of Range\nError-Msg  : P_GDIV_ROUND_LVL must be greater than 0. \n");
   end
 
   ///////////////////////////////////////////////////////////////////////////////
@@ -101,8 +96,8 @@ module Goldschmidt_Integer_Divider_Parallel #(
     begin
       F_ARRAY_HIGH = 0;
       // Count how many values the LookUp Table has.
-      for (jj = one_tength; jj > 10; jj = jj/10) begin
-        F_ARRAY_HIGH = F_ARRAY_HIGH+1;
+      for (jj = one_tength; jj > 0; jj = jj/10) begin
+        F_ARRAY_HIGH = F_ARRAY_HIGH + 1;
       end
     end
   endfunction // F_ARRAY_HIGH
@@ -154,88 +149,100 @@ module Goldschmidt_Integer_Divider_Parallel #(
   // Internal Parameters Declaration
   ///////////////////////////////////////////////////////////////////////////////
   // Division Process signals indexing constants
-  localparam integer L_MUL_FACTORS_MSB  = (P_GDIV_FACTORS_MSB+1)+(P_GDIV_FRAC_LENGTH)-1;
+  localparam integer L_MUL_FACTORS_MSB  = (P_GDIV_FACTORS_MSB+1)+P_GDIV_FRAC_LENGTH-1;
   localparam integer L_FACTOR1_LSB      = P_GDIV_FACTORS_MSB+1;
   localparam integer L_FACTOR1_MSB      = (P_GDIV_FACTORS_MSB*2)+1;
   localparam integer L_PRODUCT_MSB      = (P_GDIV_FACTORS_MSB+1)+((P_GDIV_FRAC_LENGTH)*2)-1;
   localparam integer L_STEP_PRODUCT_LSB = P_GDIV_FRAC_LENGTH;
   // LookUp Table Constants
-  localparam integer L_LUT_MSB     = ((P_GDIV_FACTORS_MSB+1)*2)-P_GDIV_FRAC_LENGTH-1;
   localparam integer L_NINE_NIBLES = ((P_GDIV_FACTORS_MSB+1)/4)-1;
   localparam integer L_ONE_TENGTH  = {4'h1, {L_NINE_NIBLES{4'h9}}};
   localparam integer L_ARRAY_HIGH  = F_ARRAY_HIGH(L_ONE_TENGTH);
+  localparam integer L_LUT_MSB     = ((P_GDIV_FACTORS_MSB+1)*2)-P_GDIV_FRAC_LENGTH-1;
   // Division Process '2' constants
-  localparam integer               L_ZERO_FILLER        = L_FACTOR1_LSB;
   localparam integer               L_TWOS_LEADING_ZEROS = P_GDIV_FACTORS_MSB-1;
   localparam [L_MUL_FACTORS_MSB:0] L_NUMBER_TWO_EXT     = {{L_TWOS_LEADING_ZEROS{1'b0}}, 2'b10, {P_GDIV_FRAC_LENGTH{1'b0}}};
-  // Program Counter FSM States
-  localparam [0:0] S_INITIATE = 1'b1; // Waits for valid factors.
-  localparam [0:0] S_ITERATE  = 1'b0; // D[i] * (2-d[i]); d[i] * (2-d[i]); were i is the iteration step. D dividend & d divisor.
+  // Division Iteration Steps Limits
+  localparam integer L_QUO_LIMIT   = $rtoi($ceil($sqrt(P_GDIV_FACTORS_MSB+1)))-1;
+  localparam integer L_REM_LIMIT   = $rtoi($ceil($sqrt((P_GDIV_FACTORS_MSB+1)+(P_GDIV_FRAC_LENGTH))))-1;
 
   ///////////////////////////////////////////////////////////////////////////////
   // Internal Signals Declarations
   ///////////////////////////////////////////////////////////////////////////////
+  // Division Step Process
+  reg [L_REM_LIMIT:0] r_div_step;
   // Divider Accumulator signals
-  reg                        r_div_acc_state;
-  reg                        r_calc_remainder;
-  reg                        r_neg_result;
-  reg [P_GDIV_FACTORS_MSB:0] r_divisor;
-  reg [L_MUL_FACTORS_MSB:0]  r_dividend_acc;
+  reg                         r_stall;
+  reg                         r_ack;
+  reg                         r_calc_remainder;
+  reg                         r_neg_result;
+  reg  [P_GDIV_FACTORS_MSB:0] r_divisor;
+  reg  [P_GDIV_FACTORS_MSB:0] r_1step_result;
+  wire                        w_converged = 
+    r_calc_remainder==1'b1 ? r_div_step[L_REM_LIMIT] : r_div_step[L_QUO_LIMIT];
   // Turn negative to positive is signed division
-  wire [P_GDIV_FACTORS_MSB:0] w_dividend = (i_wb4s_tgc[0]==1'b0 && i_wb4s_data[P_GDIV_FACTORS_MSB]==1'b1) ?
-                                            -(i_wb4s_data[P_GDIV_FACTORS_MSB:0]) :
-                                            i_wb4s_data[P_GDIV_FACTORS_MSB:0];
-  wire [P_GDIV_FACTORS_MSB:0] w_divisor  = (i_wb4s_tgc[0]==1'b0 && i_wb4s_data[L_FACTOR1_MSB]==1'b1) ?
-                                            -(i_wb4s_data[L_FACTOR1_MSB:L_FACTOR1_LSB]) :
-                                            i_wb4s_data[L_FACTOR1_MSB:L_FACTOR1_LSB];
+  wire [P_GDIV_FACTORS_MSB:0] w_dividend = 
+    (i_wb4s_tgc[0]==1'b0 && i_wb4s_data[P_GDIV_FACTORS_MSB]==1'b1) ?
+      -(i_wb4s_data[P_GDIV_FACTORS_MSB:0]) : i_wb4s_data[P_GDIV_FACTORS_MSB:0];
+
+  wire [P_GDIV_FACTORS_MSB:0] w_divisor  = 
+    (i_wb4s_tgc[0]==1'b0 && i_wb4s_data[L_FACTOR1_MSB]==1'b1) ?
+      -(i_wb4s_data[L_FACTOR1_MSB:L_FACTOR1_LSB]) : i_wb4s_data[L_FACTOR1_MSB:L_FACTOR1_LSB];
+
   // Corner Cases
   wire w_less_than          = (w_dividend < w_divisor) ? 1'b1 : 1'b0;
   wire w_divisor_zero       = i_wb4s_data[L_FACTOR1_MSB:L_FACTOR1_LSB]==0 ? 1'b1 : 1'b0;
-  wire w_divisor_is_one     = w_divisor == 1 ? 1'b1 : 1'b0;
+  wire w_divisor_is_one     = w_divisor ==  1 ? 1'b1 : 1'b0;
   wire w_divisor_is_neg_one = w_divisor == -1 ? 1'b1 : 1'b0;
-  wire w_equal_factors      = i_wb4s_data[P_GDIV_FACTORS_MSB:0] == i_wb4s_data[L_FACTOR1_MSB:L_FACTOR1_LSB] ? 1'b1 : 1'b0;
-  //
+  wire w_equal_factors      = 
+    i_wb4s_data[P_GDIV_FACTORS_MSB:0] == i_wb4s_data[L_FACTOR1_MSB:L_FACTOR1_LSB] ? 1'b1 : 1'b0;
+  // Multiplication Process
   reg [L_PRODUCT_MSB:0] r_product0;
   reg [L_PRODUCT_MSB:0] r_product1;
   // Iterative operation signals
-  wire [L_MUL_FACTORS_MSB:0] w_divisor_acc = (r_div_acc_state==1'b1 && i_wb4s_stb==1'b1) ?
-                                               {w_divisor, {P_GDIV_FRAC_LENGTH{1'b0}}} :
-                                               r_product1[L_PRODUCT_MSB:L_STEP_PRODUCT_LSB];
+  wire [L_MUL_FACTORS_MSB:0] w_divisor_acc = s_initiate==1'b1 ?
+      {w_divisor, {P_GDIV_FRAC_LENGTH{1'b0}}} : r_product1[L_PRODUCT_MSB:L_STEP_PRODUCT_LSB];
 
-  wire [L_MUL_FACTORS_MSB:0] w_two_minus_divisor = (L_NUMBER_TWO_EXT + ~r_product1[L_PRODUCT_MSB:L_STEP_PRODUCT_LSB]); // 2-divisor
-  wire                       w_converged         = ~(|w_two_minus_divisor[P_GDIV_FRAC_LENGTH-1 -: P_GDIV_CONV_BITS]); // is it .00xxx...?
-  reg                        r_converged;
+  wire [L_MUL_FACTORS_MSB:0] w_two_minus_divisor =
+    (L_NUMBER_TWO_EXT + ~r_product1[L_PRODUCT_MSB:L_STEP_PRODUCT_LSB]); // 2-divisor
 
   wire [L_MUL_FACTORS_MSB:0] w_dividend_acc = 
-    (r_div_acc_state==1'b1) ? {w_dividend, {P_GDIV_FRAC_LENGTH{1'b0}}} :
-    (r_div_acc_state==1'b0 && w_converged==1'b1 && r_calc_remainder==1'b1) ?
+    (s_initiate==1'b1) ? {w_dividend, {P_GDIV_FRAC_LENGTH{1'b0}}} :
+    (r_div_step[L_REM_LIMIT]==1'b1 && r_calc_remainder==1'b1) ?
       {{(P_GDIV_FACTORS_MSB+1){1'b0}}, r_product0[L_STEP_PRODUCT_LSB-1 -: P_GDIV_FRAC_LENGTH]} :
       r_product0[L_PRODUCT_MSB:L_STEP_PRODUCT_LSB];
   // LookUp Table signals
   integer                       iter;
   reg     [L_LUT_MSB:0]         r_lut_value; // The calculation is done in integers
   wire    [L_MUL_FACTORS_MSB:0] w_lut_value = {{(P_GDIV_FACTORS_MSB+1){1'b0}}, r_lut_value}; // Fixed point adjust
-  //
+  // Multiplier Select
   wire [L_MUL_FACTORS_MSB:0] w_multiplier = 
-    (r_div_acc_state==1'b1) ? w_lut_value :
-    (r_div_acc_state==1'b0 && w_converged==1'b1 && r_calc_remainder==1'b1 ) ?
+    (s_initiate==1'b1) ? w_lut_value :
+    (r_div_step[L_REM_LIMIT]==1'b1 && r_calc_remainder==1'b1) ?
       {r_divisor, {P_GDIV_FRAC_LENGTH{1'b0}}} : w_two_minus_divisor;
   // Round Up?
   wire w_ceil = &r_product0[(P_GDIV_FRAC_LENGTH*2)-1 -: P_GDIV_ROUND_LVL];
-  // Result Registers Write Signals
+  // Result Select Signals
+  reg                         r_rem_zero;
   wire [P_GDIV_FACTORS_MSB:0] w_result_mag = 
-    (w_ceil==1'b1) ? (r_product0[L_PRODUCT_MSB -: (P_GDIV_FACTORS_MSB+1)]+1) : r_product0[L_PRODUCT_MSB -: (P_GDIV_FACTORS_MSB+1)];
-
-  wire [P_GDIV_FACTORS_MSB:0] w_result     = 
-    (r_div_acc_state==1'b1) ? r_dividend_acc[L_MUL_FACTORS_MSB -: (P_GDIV_FACTORS_MSB+1)] :
-    (r_neg_result==1'b1) ? -w_result_mag : w_result_mag;
+    (w_ceil==1'b1) ? (r_product0[L_PRODUCT_MSB -: (P_GDIV_FACTORS_MSB+1)]+1) : 
+                      r_product0[L_PRODUCT_MSB -: (P_GDIV_FACTORS_MSB+1)];
+  wire [P_GDIV_FACTORS_MSB:0] w_result = 
+    (r_rem_zero==1'b1)   ?              0 :
+    (s_initiate==1'b1 && r_calc_remainder==1'b1) ? 
+      ((r_neg_result==1'b1) ? -w_result_mag : w_result_mag) :
+    (s_initiate==1'b1 && r_div_step[L_QUO_LIMIT+1]==1'b0) ? r_1step_result :
+    (r_neg_result==1'b1) ?  -w_result_mag : w_result_mag;
+  // FSM States
+  wire s_initiate = i_wb4s_stb & !r_stall;
+  wire s_iterate  = r_stall;
 
   ///////////////////////////////////////////////////////////////////////////////
   //            ********      Architecture Declaration      ********           //
   ///////////////////////////////////////////////////////////////////////////////
 
   // WB4 Slave Interface ouput wires
-  assign o_wb4s_stall = ~r_div_acc_state;
+  assign o_wb4s_stall = r_stall;
 
   ///////////////////////////////////////////////////////////////////////////////
   // Process     : Divider Accumulator
@@ -245,123 +252,105 @@ module Goldschmidt_Integer_Divider_Parallel #(
   ///////////////////////////////////////////////////////////////////////////////
   always @(posedge i_clk) begin : Divider_Accumulator_Process
     if (i_rst == 1'b1 || i_wb4s_cyc == 1'b0) begin
-      r_div_acc_state  <= S_INITIATE;
+      r_stall          <= 1'b0;
+      r_ack            <= 1'b0;
       r_divisor        <= 0;
-      r_dividend_acc   <= 0;
+      r_1step_result   <= 0;
       r_calc_remainder <= 1'b0;
-      r_converged      <= 1'b0;
       r_neg_result     <= 1'b0;
+      r_rem_zero       <= 1'b0;
     end
-    else if (i_wb4s_cyc == 1'b1)begin
+    else if (i_wb4s_cyc == 1'b1) begin
       casez (1'b1)
-        r_div_acc_state : begin
-          if (i_wb4s_stb == 1'b1) begin
-            // Start division. Look for any special case that can be done
-            // without the iterative process, else perform Goldschmidt division.
-            casez(1'b1)
-              w_divisor_zero : begin
-                // If either is zero return zero
-                r_converged     <= 1'b1;
-                r_dividend_acc  <= -1;
-                r_div_acc_state <= S_INITIATE;
+        s_initiate : begin
+          // Start division. Look for any special case that can be done
+          // without the iterative process, else perform Goldschmidt division.
+          casez(1'b1)
+            w_divisor_zero : begin
+              // If either is zero return zero
+              r_1step_result <= -1;
+              r_stall        <= 1'b0;
+              r_ack          <= 1'b1;
+            end
+            w_less_than : begin
+              // If either is zero return zero
+              r_1step_result <= 0;
+              r_stall        <= 1'b0;
+              r_ack          <= 1'b1;
+            end
+            w_divisor_is_one : begin
+              // if divisor is 1 return numerator
+              r_1step_result <= i_wb4s_data[P_GDIV_FACTORS_MSB:0];
+              r_stall        <= 1'b0;
+              r_ack          <= 1'b1;
+            end
+            w_divisor_is_neg_one : begin
+              // if divisor is -1 return -1*numerator
+              r_1step_result <= -($signed(i_wb4s_data[P_GDIV_FACTORS_MSB:0]));
+              r_stall        <= 1'b0;
+              r_ack          <= 1'b1;
+            end
+            w_equal_factors : begin
+              // if equal return 1 for quotient and zero for remainder
+              r_1step_result <= 1;
+              r_stall        <= 1'b0;
+              r_ack          <= 1'b1;
+            end
+            default : begin
+              // Shift the decimal point in the divisor.
+              if (i_wb4s_tgc[0] == 1'b0 && (
+                i_wb4s_data[P_GDIV_FACTORS_MSB]==1'b1 ^ i_wb4s_data[L_FACTOR1_MSB]==1'b1)) begin
+                // If performing signed division and the result should be negative.
+                r_neg_result <= 1'b1;
               end
-              w_less_than : begin
-                // If either is zero return zero
-                r_converged     <= 1'b1;
-                r_dividend_acc  <= 0;
-                r_div_acc_state <= S_INITIATE;
-              end
-              w_divisor_is_one : begin
-                // if divisor is 1 return numerator
-                r_converged     <= 1'b1;
-                r_dividend_acc  <= {i_wb4s_data[P_GDIV_FACTORS_MSB:0], {P_GDIV_FRAC_LENGTH{1'b0}}};
-                r_div_acc_state <= S_INITIATE;
-              end
-              w_divisor_is_neg_one : begin
-                // if divisor is -1 return -1*numerator
-                r_converged     <= 1'b1;
-                r_dividend_acc  <= {-($signed(i_wb4s_data[P_GDIV_FACTORS_MSB:0])), {P_GDIV_FRAC_LENGTH{1'b0}}};
-                r_div_acc_state <= S_INITIATE;
-              end
-              w_equal_factors : begin
-                // if equal return 1 for quotient and zero for remainder
-                r_converged     <= 1'b1;
-                r_dividend_acc  <= {{(P_GDIV_FACTORS_MSB){1'b0}}, 1'b1, {P_GDIV_FRAC_LENGTH{1'b0}}};
-                r_div_acc_state <= S_INITIATE;
-              end
-              default : begin
-                // Shift the decimal point in the divisor.
-                if (i_wb4s_tgc[0] == 1'b0 && (
-                  i_wb4s_data[P_GDIV_FACTORS_MSB]==1'b1 ^ i_wb4s_data[L_FACTOR1_MSB]==1'b1)) begin
-                  // If performing signed division and the result should be negative.
-                  r_neg_result <= 1'b1;
-                end
-                else begin
-                  //
-                  r_neg_result <= 1'b0;
-                end
+              else begin
                 //
-                r_converged     <= 1'b0;
-                r_dividend_acc  <= {w_dividend, {P_GDIV_FRAC_LENGTH{1'b0}}};
-                r_div_acc_state <= S_ITERATE;
+                r_neg_result <= 1'b0;
               end
-            endcase
-            r_calc_remainder <= i_wb4s_tgc[1];
-          end
-          else begin
-            //
-            r_div_acc_state  <= S_INITIATE;
-            r_dividend_acc   <= 0;
-            r_calc_remainder <= 1'b0;
-            r_neg_result     <= 1'b0;
-          end
-          r_divisor <= w_divisor;
+              //
+              r_1step_result <= 0;
+              r_stall        <= 1'b1;
+              r_ack          <= 1'b0;
+            end
+          endcase
+          r_calc_remainder <= i_wb4s_tgc[1];
+          r_divisor        <= w_divisor;
+          r_rem_zero       <= 1'b0;
         end
-        !r_div_acc_state : begin
-          // Iterate until the divisor converges towards 1.000xxxx...
-          if (r_converged == 1'b1) begin
-            // Remainder
-            r_converged     <= 1'b0;
-            r_div_acc_state <= S_INITIATE;
+        s_iterate : begin
+          // Iterate until the divisor converges towards 1
+          if (w_ceil == 1'b1 && r_calc_remainder == 1'b1 && r_div_step[L_QUO_LIMIT] == 1'b1) begin     
+            r_rem_zero <= 1'b1;
+            r_stall    <= 1'b0;
+            r_ack      <= 1'b1;
           end
-          else if (w_converged == 1'b1 && r_calc_remainder == 1'b1) begin
-            // Convert the remainder from decimal fraction to a natural number
-            if (w_ceil == 1'b1) begin
-	            //
-              r_dividend_acc <= 0;
-            end
-            else begin
-	            //
-              r_dividend_acc <= r_product0[L_PRODUCT_MSB:L_STEP_PRODUCT_LSB];
-            end
-            r_converged     <= 1'b1;
-            r_div_acc_state <= S_ITERATE;
-          end
-          else if (w_converged == 1'b1) begin
-            r_converged     <= 1'b0;
-            r_div_acc_state <= S_INITIATE;
+          else if (w_converged == 1'b1) begin     
+            r_rem_zero <= 1'b0;
+            r_stall    <= 1'b0;
+            r_ack      <= 1'b1;
           end
           else begin
-            // Second half of the division step
-            r_dividend_acc  <= r_product0[L_PRODUCT_MSB:L_STEP_PRODUCT_LSB];
-            r_converged     <= 1'b0;
-            r_div_acc_state <= S_ITERATE;
+	          //
+            r_rem_zero <= 1'b0;
+            r_stall    <= 1'b1;
+            r_ack      <= 1'b0;
           end
         end
         default : begin
-          r_div_acc_state  <= S_INITIATE;
-          r_divisor        <= w_divisor;
-          r_dividend_acc   <= 0;
+          r_divisor        <= 0;
+          r_1step_result   <= 0;
           r_calc_remainder <= 1'b0;
-          r_converged      <= 1'b0;
           r_neg_result     <= 1'b0;
+          r_stall          <= 1'b0;
+          r_ack            <= 1'b0;
+          r_rem_zero       <= 1'b0;
         end
       endcase
     end
   end // Divider_Accumulator_Process
 
   // WB4 Master Write Interface wires
-  assign o_wb4s_ack  = (r_calc_remainder==1'b0 && r_div_acc_state==1'b0) ? w_converged : r_converged;
+  assign o_wb4s_ack  = r_ack;
   assign o_wb4s_data = w_result;
 
   ///////////////////////////////////////////////////////////////////////////////
@@ -376,13 +365,27 @@ module Goldschmidt_Integer_Divider_Parallel #(
     end
     else begin
       r_lut_value = F_EE_LUT(L_ONE_TENGTH, 1);
-      for (iter = 2; iter <= L_ARRAY_HIGH+1; iter = iter+1) begin
+      for (iter = 2; iter <= L_ARRAY_HIGH; iter = iter+1) begin
         if (w_divisor >= F_TWO_EE(iter-1)) begin
            r_lut_value = F_EE_LUT(L_ONE_TENGTH, iter);
         end
       end
     end
   end // EE_LUT_Entry_Select
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Process     : Division Step Process
+  // Description : This is a generic code, generally inferred as a DSPs block
+  //               by modern synthesis tools.
+  /////////////////////////////////////////////////////////////////////////////
+  always @(posedge i_clk) begin : Division_Step_Process
+    if (r_stall == 1'b0) begin
+        r_div_step <= 1;
+    end
+    else begin
+      r_div_step <= r_div_step << 1;
+    end
+  end // Division_Step_Process
 
   /////////////////////////////////////////////////////////////////////////////
   // Process     : Dividen Multiplication Process
@@ -407,5 +410,4 @@ module Goldschmidt_Integer_Divider_Parallel #(
       r_product1 <= w_divisor_acc * w_multiplier;
     end
   end // Divisor_Multiplication_Process
-
-endmodule // Goldschmidt_Integer_Divider
+endmodule // Goldschmidt_Integer_Divider_Parallel
