@@ -30,13 +30,13 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 /////////////////////////////////////////////////////////////////////////////////
-// File name     : TB_TOP.v
-// Author        : Jose R Garcia
-// Project Name  : Goldschmidt Integer Divider
-// Module Name   : TB_TOP
-// Description   : The TB_TOP is a wrapper to include the missing signals
-//                 required by the verification agents(stub agents interface
-//                 unused signals)
+// File name    : TB_TOP.v
+// Author       : Jose R Garcia (jg-fossh@protonmail.com)
+// Project Name : Goldschmidt Integer Divider
+// Module Name  : TB_TOP
+// Description  : The TB_TOP is a wrapper to include the missing signals
+//                required by the verification agents(stub agents interface
+//                unused signals)
 //
 // Additional Comments:
 //

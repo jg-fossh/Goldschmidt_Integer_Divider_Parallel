@@ -1,7 +1,7 @@
 ##################################################################################################
 # BSD 3-Clause License
 #
-# Copyright (c) 2020, Jose R. Garcia
+# Copyright (c) 2022, Jose R. Garcia
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,13 +30,11 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 ##################################################################################################
-# File name     : tb_env_config.py
-# Author        : Jose R Garcia
-# Created       : 2020/11/05 20:08:35
-# Last modified : 2021/06/15 19:00:57
-# Project Name  : Goldschmidt Integer Divider
-# Module Name   : tb_env_config
-# Description   : Test Bench Configurations
+# File name    : tb_env_config.py
+# Author       : Jose R Garcia (jg-fossh@protonmail.com)
+# Project Name : Goldschmidt Integer Divider
+# Class Name   : tb_env_config
+# Description  : Test Bench Configurations
 #
 # Additional Comments:
 #
@@ -45,12 +43,9 @@ import cocotb
 from cocotb.triggers import *
 from uvm.tlm1 import *
 from uvm.macros import *
-from wb4_master_agent import *
-from wb4_master_config import *
-from wb4_master_seq import *
-from wb4_slave_agent import *
-from wb4_slave_config import *
-from wb4_slave_seq import *
+from wb4s_agent import *
+from wb4s_config import *
+from wb4s_seq import *
 
 class tb_env_config(UVMEnv):
     """
@@ -71,15 +66,14 @@ class tb_env_config(UVMEnv):
              parent: NONE
         """
         #
-        self.wb4_master_agent_cfg = wb4_master_config.type_id.create("wb4_master_agent_cfg", self)
-        self.wb4_slave_agent_cfg = wb4_slave_config.type_id.create("wb4_slave_agent_cfg", self)
+        self.wb4s_agent_cfg = wb4s_config.type_id.create("wb4s_agent_cfg", self)
         #
         self.has_scoreboard = False           # scoreboard on/off
         self.has_predictor  = False           # predictor on/off
         self.has_functional_coverage = False  # coverage on/off
         #
         self.DUT_SLAVE_DATA_IN_LENGTH = 0
-        self.data_bins_range = [0, 25]
+        self.data_bins_range = [0, 10]
         #
         self.tag = "tb_env_config"
 

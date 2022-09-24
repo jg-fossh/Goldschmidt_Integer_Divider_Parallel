@@ -1,7 +1,7 @@
 ##################################################################################################
 # BSD 3-Clause License
 #
-# Copyright (c) 2020, Jose R. Garcia
+# Copyright (c) 2022, Jose R. Garcia
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,14 +30,12 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 ##################################################################################################
-# File name     : predictor.py
-# Author        : Jose R Garcia
-# Created       : 2020/11/05 20:08:35
-# Last modified : 2021/06/27 00:22:44
-# Project Name  : Goldschmidt Integer Divider
-# Module Name   : predictor
-# Description   : Non Time Consuming model. Calculates the product of the division when tgd = 0
-#                 and calculates the remainder when tgd = 1.
+# File name    : predictor.py
+# Author       : Jose R Garcia (jg-fossh@protonmail.com)
+# Project Name : Goldschmidt Integer Divider
+# Class Name   : predictor
+# Description  : Non Time Consuming model. Calculates the product of the division when tgd = 0
+#                and calculates the remainder when tgd = 1.
 #
 # Additional Comments:
 #

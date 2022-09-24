@@ -1,7 +1,7 @@
 ##################################################################################################
 # BSD 3-Clause License
 #
-# Copyright (c) 2020, Jose R. Garcia
+# Copyright (c) 2022, Jose R. Garcia
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,13 +30,11 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 ##################################################################################################
-# File name     : test_lib.py
-# Author        : Jose R Garcia
-# Created       : 2020/11/05 19:26:21
-# Last modified : 2021/09/26 09:37:54
-# Project Name  : Goldschmidt Integer Divider
-# Module Name   : test_lib
-# Description   : Collection of tests available for this module.
+# File name    : test_lib.py
+# Author       : Jose R Garcia (jg-fossh@protonmail.com)
+# Project Name : Goldschmidt Integer Divider
+# Class Name   : test_lib
+# Description  : Collection of tests available for this module.
 #
 # Additional Comments:
 #   Contains the test base and tests.
@@ -54,6 +52,7 @@ from tb_env import *
 from predictor import *
 # General Python Libs
 import math
+import random as rnd
 
 class test_base(UVMTest):
     """
@@ -86,7 +85,7 @@ class test_base(UVMTest):
         self.tb_env_config.has_predictor            = True
         self.tb_env_config.has_functional_coverage  = False
         self.tb_env_config.DUT_SLAVE_DATA_IN_LENGTH = arr[0]
-        self.tb_env_config.data_bins_range          = [50000, 50030]
+        self.tb_env_config.data_bins_range          = [500, 600]
 
         # Create the Mem Read agent
         self.wb4s_agent_cfg = wb4s_config.type_id.create("wb4s_agent_cfg", self)
@@ -171,7 +170,8 @@ class default_test(test_base):
         phase.raise_objection(self, "default_test raise objection")
 
         # Call and fork the methods that create sequences to feed the sequencers
-        slave_proc  = cocotb.fork(self.stimulate_slave_intfc())
+        slave_proc  = cocotb.fork(self.random_stimulat_intfc())
+        #slave_proc  = cocotb.fork(self.stimulate_slave_intfc())
 
         await Timer(16, "NS") # Allow some clocks for evething to settle
         await sv.fork_join_any([slave_proc])
@@ -179,113 +179,192 @@ class default_test(test_base):
         phase.drop_objection(self, "default_test drop objection")
 
 
+    async def random_stimulat_intfc(self):
+        #
+        top_rng    = int(pow(2, (self.tb_env.cfg.DUT_SLAVE_DATA_IN_LENGTH)/2))
+        stop_count = 25
+        wb4s_sqr   = self.tb_env.wb4s_agent.sqr
+        
+        # de-assert the CYC and STB signals
+        increment_sum_seq           = wb4s_single_write_seq("increment_sum_seq")
+        increment_sum_seq.data      = 51966 #0xCAFE
+        increment_sum_seq.cycle     = 0
+        increment_sum_seq.strobe    = 0
+        increment_sum_seq.cycle_tag = 0
+
+        await increment_sum_seq.start(wb4s_sqr)
+        
+        while (stop_count > 0): 
+            stop_count -= 1
+            wb4s_sqr    = self.tb_env.wb4s_agent.sqr
+
+            # Create transactions to stimulate the slave interface (calc division)
+            increment_sum_seq           = wb4s_single_write_seq("increment_sum_seq")
+            increment_sum_seq.data      = (rnd.randint(0,top_rng) << math.floor(self.tb_env.cfg.DUT_SLAVE_DATA_IN_LENGTH/2)) + rnd.randint(0,top_rng)
+            increment_sum_seq.strobe    = 1 # rnd.randint(0,2)
+            increment_sum_seq.cycle     = 1 #rnd.randint(0,2)
+            increment_sum_seq.cycle_tag = rnd.randint(0,4)
+
+            await increment_sum_seq.start(wb4s_sqr)
+
+        # de-assert the CYC and STB signals
+        increment_sum_seq           = wb4s_single_write_seq("increment_sum_seq")
+        increment_sum_seq.data      = 51966 #0xCAFE
+        increment_sum_seq.cycle     = 0
+        increment_sum_seq.strobe    = 0
+        increment_sum_seq.cycle_tag = 0
+
+        await increment_sum_seq.start(wb4s_sqr)
+
+
     async def stimulate_slave_intfc(self):
         #
         self.count = int(pow(2, (self.tb_env.cfg.DUT_SLAVE_DATA_IN_LENGTH)/2)-1)
-        data_inc   = 2
+        data_inc   = 3
         stop_count = self.count + (self.tb_env.cfg.data_bins_range[1] - self.tb_env.cfg.data_bins_range[0])/data_inc
-
-        #
         wb4s_sqr = self.tb_env.wb4s_agent.sqr
-
-        # Create transactions to stimulate the slave interface (calc division)
-        increment_sum_seq          = wb4s_single_write_seq("increment_sum_seq")
-        increment_sum_seq.data     = self.count * 2
-        increment_sum_seq.strobe   = 1
-        increment_sum_seq.cycle    = 1
+        
+        # de-assert the CYC and STB signals
+        increment_sum_seq           = wb4s_single_write_seq("increment_sum_seq")
+        increment_sum_seq.data      = 51966 #0xCAFE
+        increment_sum_seq.cycle     = 0
+        increment_sum_seq.strobe    = 0
         increment_sum_seq.cycle_tag = 0
 
-        while self.count < stop_count:
-            await increment_sum_seq.start(wb4s_sqr)
-            # Count decrement data for next sequence.
-            self.count += 1
-            increment_sum_seq          = wb4s_single_write_seq("increment_sum_seq")
-            increment_sum_seq.cycle    = 1
-            increment_sum_seq.strobe   = 1
-            increment_sum_seq.cycle_tag = 0
-            increment_sum_seq.data     = ((self.count * data_inc) + self.tb_env.cfg.data_bins_range[0]) << round(data_inc/2)
-            #increment_sum_seq.data     = self.count * data_inc
-            data_inc += 1
+        await increment_sum_seq.start(wb4s_sqr)
 
+        # Create transactions to stimulate the slave interface (calc division)
+        increment_sum_seq           = wb4s_single_write_seq("increment_sum_seq")
+        increment_sum_seq.data      = 0
+        increment_sum_seq.strobe    = 1
+        increment_sum_seq.cycle     = 1
+        increment_sum_seq.cycle_tag = 0
+
+        await increment_sum_seq.start(wb4s_sqr)
+
+        # Create transactions to stimulate the slave interface (calc division)
+        increment_sum_seq           = wb4s_single_write_seq("increment_sum_seq")
+        increment_sum_seq.data      = 1
+        increment_sum_seq.strobe    = 1
+        increment_sum_seq.cycle     = 1
+        increment_sum_seq.cycle_tag = 0
+
+        await increment_sum_seq.start(wb4s_sqr)
+
+        # Create transactions to stimulate the slave interface (calc division)
+        increment_sum_seq           = wb4s_single_write_seq("increment_sum_seq")
+        increment_sum_seq.data      = 1 << math.floor(self.tb_env.cfg.DUT_SLAVE_DATA_IN_LENGTH/2)
+        increment_sum_seq.strobe    = 1
+        increment_sum_seq.cycle     = 1
+        increment_sum_seq.cycle_tag = 0
+
+        await increment_sum_seq.start(wb4s_sqr)
         
-        await increment_sum_seq.start(wb4s_sqr)
-
-
-        # Re-start the count
-        self.count = int(pow(2, (self.tb_env.cfg.DUT_SLAVE_DATA_IN_LENGTH)/2))
-
-        # Create transactions to stimulate the slave interface (calc remainder)
-        increment_sum_seq          = wb4s_single_write_seq("increment_sum_seq")
-        increment_sum_seq.data     = self.count * 2
-        increment_sum_seq.strobe   = 1
-        increment_sum_seq.cycle    = 1
-        increment_sum_seq.cycle_tag = 1
-
-        while self.count < stop_count:
-            await increment_sum_seq.start(wb4s_sqr)
-            # Count decrement data for next sequence.
-            self.count += 1
-            increment_sum_seq          = wb4s_single_write_seq("increment_sum_seq")
-            increment_sum_seq.cycle    = 1
-            increment_sum_seq.strobe   = 1
-            increment_sum_seq.cycle_tag = 1
-            increment_sum_seq.data     = (self.count * data_inc)+1
-
+        # Create transactions to stimulate the slave interface (calc division)
+        increment_sum_seq           = wb4s_single_write_seq("increment_sum_seq")
+        increment_sum_seq.data      = (1 << math.floor(self.tb_env.cfg.DUT_SLAVE_DATA_IN_LENGTH/2)) + 1
+        increment_sum_seq.strobe    = 1
+        increment_sum_seq.cycle     = 1
+        increment_sum_seq.cycle_tag = 0
 
         await increment_sum_seq.start(wb4s_sqr)
-
-        # Re-start the count
-        self.count = int(pow(2, (self.tb_env.cfg.DUT_SLAVE_DATA_IN_LENGTH)/2)+1)
-
-        # Create transactions to stimulate the slave interface (calc remainder)
-        increment_sum_seq          = wb4s_single_write_seq("increment_sum_seq")
-        increment_sum_seq.data     = self.count * 2
-        increment_sum_seq.strobe   = 1
-        increment_sum_seq.cycle    = 1
-        increment_sum_seq.cycle_tag = 2
-
-        while self.count < stop_count:
-            await increment_sum_seq.start(wb4s_sqr)
-            # Count decrement data for next sequence.
-            self.count += 1
-            increment_sum_seq          = wb4s_single_write_seq("increment_sum_seq")
-            increment_sum_seq.cycle    = 1
-            increment_sum_seq.strobe   = 1
-            increment_sum_seq.cycle_tag = 2
-            increment_sum_seq.data     = (self.count * data_inc)+1
-
-
-        await increment_sum_seq.start(wb4s_sqr)
-
-        # Re-start the count
-        self.count = int(pow(2, (self.tb_env.cfg.DUT_SLAVE_DATA_IN_LENGTH)/2)+4)
-
-        # Create transactions to stimulate the slave interface (calc remainder)
-        increment_sum_seq          = wb4s_single_write_seq("increment_sum_seq")
-        increment_sum_seq.data     = self.count * 2
-        increment_sum_seq.strobe   = 1
-        increment_sum_seq.cycle    = 1
+        
+        # Create transactions to stimulate the slave interface (calc division)
+        increment_sum_seq           = wb4s_single_write_seq("increment_sum_seq")
+        increment_sum_seq.data      = (0xFFFFFFFF << math.floor(self.tb_env.cfg.DUT_SLAVE_DATA_IN_LENGTH/2)) + 1
+        increment_sum_seq.strobe    = 1
+        increment_sum_seq.cycle     = 1
         increment_sum_seq.cycle_tag = 3
 
-        while self.count < stop_count:
-            await increment_sum_seq.start(wb4s_sqr)
-            # Count decrement data for next sequence.
-            self.count += 1
-            increment_sum_seq          = wb4s_single_write_seq("increment_sum_seq")
-            increment_sum_seq.cycle    = 1
-            increment_sum_seq.strobe   = 1
-            increment_sum_seq.cycle_tag = 3
-            increment_sum_seq.data     = (self.count * data_inc)+1
+        await increment_sum_seq.start(wb4s_sqr)
 
+        # Create transactions to stimulate the slave interface (calc division)
+        increment_sum_seq           = wb4s_single_write_seq("increment_sum_seq")
+        increment_sum_seq.data      = (0xFFFFFFFF << math.floor(self.tb_env.cfg.DUT_SLAVE_DATA_IN_LENGTH/2)) + 10
+        increment_sum_seq.strobe    = 1
+        increment_sum_seq.cycle     = 1
+        increment_sum_seq.cycle_tag = 3
+
+        await increment_sum_seq.start(wb4s_sqr)
+
+        # Create transactions to stimulate the slave interface (calc division)
+        increment_sum_seq           = wb4s_single_write_seq("increment_sum_seq")
+        increment_sum_seq.data      = (3145727 << math.floor(self.tb_env.cfg.DUT_SLAVE_DATA_IN_LENGTH/2)) + 4195835
+        increment_sum_seq.strobe    = 1
+        increment_sum_seq.cycle     = 1
+        increment_sum_seq.cycle_tag = 1
+
+        await increment_sum_seq.start(wb4s_sqr)
+
+        # Create transactions to stimulate the slave interface (calc division)
+        increment_sum_seq           = wb4s_single_write_seq("increment_sum_seq")
+        increment_sum_seq.data      = (3145727 << math.floor(self.tb_env.cfg.DUT_SLAVE_DATA_IN_LENGTH/2)) + 4195835
+        increment_sum_seq.strobe    = 1
+        increment_sum_seq.cycle     = 1
+        increment_sum_seq.cycle_tag = 3
+
+        await increment_sum_seq.start(wb4s_sqr)
+
+        # Create transactions to stimulate the slave interface (calc division)
+        increment_sum_seq           = wb4s_single_write_seq("increment_sum_seq")
+        increment_sum_seq.data      = (-3145727 << math.floor(self.tb_env.cfg.DUT_SLAVE_DATA_IN_LENGTH/2)) + 4195835
+        increment_sum_seq.strobe    = 1
+        increment_sum_seq.cycle     = 1
+        increment_sum_seq.cycle_tag = 1
+
+        await increment_sum_seq.start(wb4s_sqr)
+
+        # Create transactions to stimulate the slave interface (calc division)
+        increment_sum_seq           = wb4s_single_write_seq("increment_sum_seq")
+        increment_sum_seq.data      = (-3145727 << math.floor(self.tb_env.cfg.DUT_SLAVE_DATA_IN_LENGTH/2)) + 4195835
+        increment_sum_seq.strobe    = 1
+        increment_sum_seq.cycle     = 1
+        increment_sum_seq.cycle_tag = 3
+
+        await increment_sum_seq.start(wb4s_sqr)
+
+        # Create transactions to stimulate the slave interface (calc division)
+        increment_sum_seq           = wb4s_single_write_seq("increment_sum_seq")
+        increment_sum_seq.data      = (112 << math.floor(self.tb_env.cfg.DUT_SLAVE_DATA_IN_LENGTH/2)) + 5058
+        increment_sum_seq.strobe    = 1
+        increment_sum_seq.cycle     = 1
+        increment_sum_seq.cycle_tag = 1
+
+        await increment_sum_seq.start(wb4s_sqr)
+
+        # Create transactions to stimulate the slave interface (calc division)
+        increment_sum_seq           = wb4s_single_write_seq("increment_sum_seq")
+        increment_sum_seq.data      = (112 << math.floor(self.tb_env.cfg.DUT_SLAVE_DATA_IN_LENGTH/2)) + 5058
+        increment_sum_seq.strobe    = 1
+        increment_sum_seq.cycle     = 1
+        increment_sum_seq.cycle_tag = 3
+
+        await increment_sum_seq.start(wb4s_sqr)
+
+        # Create transactions to stimulate the slave interface (calc division)
+        increment_sum_seq           = wb4s_single_write_seq("increment_sum_seq")
+        increment_sum_seq.data      = (96 << math.floor(self.tb_env.cfg.DUT_SLAVE_DATA_IN_LENGTH/2)) + 1024
+        increment_sum_seq.strobe    = 1
+        increment_sum_seq.cycle     = 1
+        increment_sum_seq.cycle_tag = 3
 
         await increment_sum_seq.start(wb4s_sqr)
 
         # de-assert the CYC and STB signals
-        increment_sum_seq          = wb4s_single_write_seq("increment_sum_seq")
-        increment_sum_seq.cycle    = 0
-        increment_sum_seq.strobe   = 0
-        increment_sum_seq.data_tag = 0
-        increment_sum_seq.data     = 51966 #0xCAFE
+        increment_sum_seq           = wb4s_single_write_seq("increment_sum_seq")
+        increment_sum_seq.data      = 0
+        increment_sum_seq.cycle     = 1
+        increment_sum_seq.strobe    = 0
+        increment_sum_seq.cycle_tag = 0
+
+        await increment_sum_seq.start(wb4s_sqr)
+
+        # de-assert the CYC and STB signals
+        increment_sum_seq           = wb4s_single_write_seq("increment_sum_seq")
+        increment_sum_seq.data      = 51966 #0xCAFE
+        increment_sum_seq.cycle     = 0
+        increment_sum_seq.strobe    = 0
+        increment_sum_seq.cycle_tag = 0
 
         await increment_sum_seq.start(wb4s_sqr)
 

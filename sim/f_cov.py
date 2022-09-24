@@ -1,7 +1,7 @@
 ##################################################################################################
 # BSD 3-Clause License
 #
-# Copyright (c) 2020, Jose R. Garcia
+# Copyright (c) 2022, Jose R. Garcia
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,35 +30,32 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 ##################################################################################################
-# File name     : f_cov.py
-# Author        : Jose R Garcia
-# Created       : 2020/11/05 20:08:35
-# Last modified : 2021/06/27 00:22:44
-# Project Name  : Goldschmidt Integer Divider
-# Module Name   : f_cov
-# Description   : Funtional Coverage definitions and collections.
+# File name    : f_cov.py
+# Author       : Jose R Garcia (jg-fossh@protonmail.com)
+# Project Name : Goldschmidt Integer Divider
+# Class Name   : f_cov
+# Description  : Funtional Coverage definitions and collections.
 #
 # Additional Comments:
 #
 ##################################################################################################
+#
 import binascii
 from binascii import unhexlify, hexlify
-
 import math
-
+#
 import cocotb
 import cocotb_coverage
 from cocotb.triggers import *
 from cocotb_coverage.crv import *
 from cocotb_coverage import coverage
 from cocotb_coverage.coverage import *
-
+#
 from uvm.base import *
 from uvm.comps import *
 from uvm.tlm1 import *
 from uvm.macros import *
-from wb4_master_seq import *
-from wb4_slave_seq import *
+from wb4s_seq import *
 
 
 class f_cov(UVMSubscriber):
@@ -114,7 +111,7 @@ class f_cov(UVMSubscriber):
              sent to the scoreboard.
 
            Args:
-             t: wb4_slave_seq (Sequence Item)
+             t: wb4s_seq (Sequence Item)
         """
 
         # Define the cover point
@@ -125,7 +122,7 @@ class f_cov(UVMSubscriber):
             pass
 
         # get a string with the hex value of the dividend and the divisor
-        dividend, divisor = self.int_to_hex(t.data_in, self.data_length)
+        dividend, divisor = self.int_to_hex(t.data_in, int(self.data_length/2))
 
         # Collect coverage
         sample(t.data_tag , dividend, divisor)
@@ -143,14 +140,12 @@ class f_cov(UVMSubscriber):
              hex_value: a hex string without '0x' preappended
              hex_length: Number of bits used to represent the hex value
         """
-        data_in = hex(int_value).lstrip("0x").rstrip("L")
+        lower_mask = pow(2, factors_length)-1
+        upper_mask = lower_mask << factors_length
 
-        if (len(data_in) < factors_length*2):
-            for x in range(0, (factors_length*2)-len(data_in)):
-                data_in = "0"+data_in
-
-        dividend = data_in[factors_length:]
-        divisor = data_in[:factors_length]
+        dividend = int_value & lower_mask
+        divisor  = int_value & upper_mask
+        divisor  = divisor >> factors_length
 
         return dividend, divisor
 

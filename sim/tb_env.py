@@ -1,7 +1,7 @@
 ##################################################################################################
 # BSD 3-Clause License
 #
-# Copyright (c) 2020, Jose R. Garcia
+# Copyright (c) 2022, Jose R. Garcia
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,13 +30,11 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 ##################################################################################################
-# File name     : tb_env.py
-# Author        : Jose R Garcia
-# Created       : 2020/11/05 20:08:35
-# Last modified : 2021/06/24 23:19:01
-# Project Name  : Goldschmidt Integer Divider
-# Module Name   : tb_env
-# Description   : Test Bench Environment.
+# File name    : tb_env.py
+# Author       : Jose R Garcia (jg-fossh@protonmail.com)
+# Project Name : Goldschmidt Integer Divider
+# Class Name   : tb_env
+# Description  : Test Bench Environment.
 #
 # Additional Comments:
 #
