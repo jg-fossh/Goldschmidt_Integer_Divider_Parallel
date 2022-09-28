@@ -132,7 +132,11 @@ Taking the previous into consideration we can lower the computational complexity
 
 $$2 - d[i-1] \approxeq 2 + invert(d[i-1])$$
 
+_NOTE: Given rounding errors this 1's complements approach will sometimes yield results that are more accurate than the actual 2's complement approach._ 
+
 #### Function Generated Look Up Table 
+
+To make this module reusable for input vectors of different sizes the lookup table that contains the fracional decimal numbers used to adjust the inputs is generated at compile time. The algorithm is simple; 0.1 repsented in binary form is represented by 0x0.199999... Where the first nibble after the fractional point is 0x1 and all other nibbles are 0x9. Therefore a concantation creates a vector of length `P_GDIV_FACTORS_MSB`+1 formed by {0x1, ((length/4)-1)*{0x9}}. This vector serves as the seed to create all other values in the table which are created by iterating a division by 10 until the last value larger than 0 is reached.
 
 ## Configurable Parameters
 
