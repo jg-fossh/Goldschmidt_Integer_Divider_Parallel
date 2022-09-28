@@ -180,6 +180,9 @@ module Goldschmidt_Integer_Divider_Parallel #(
   reg  [P_GDIV_FACTORS_MSB:0] r_1step_result;
   wire                        w_converged = 
     r_calc_remainder==1'b1 ? r_div_step[L_REM_LIMIT] : r_div_step[L_QUO_LIMIT];
+  // FSM States
+  wire s_initiate = i_wb4s_stb & !r_stall;
+  wire s_iterate  = r_stall;
   // Turn negative to positive is signed division
   wire [P_GDIV_FACTORS_MSB:0] w_dividend = 
     (i_wb4s_tgc[0]==1'b0 && i_wb4s_data[P_GDIV_FACTORS_MSB]==1'b1) ?
@@ -233,9 +236,6 @@ module Goldschmidt_Integer_Divider_Parallel #(
       ((r_neg_result==1'b1) ? -w_result_mag : w_result_mag) :
     (s_initiate==1'b1 && r_div_step[L_QUO_LIMIT+1]==1'b0) ? r_1step_result :
     (r_neg_result==1'b1) ?  -w_result_mag : w_result_mag;
-  // FSM States
-  wire s_initiate = i_wb4s_stb & !r_stall;
-  wire s_iterate  = r_stall;
 
   ///////////////////////////////////////////////////////////////////////////////
   //            ********      Architecture Declaration      ********           //
@@ -360,7 +360,7 @@ module Goldschmidt_Integer_Divider_Parallel #(
   always @(*) begin : EE_LUT_Entry_Select
     // Creates a check of the input against the 2EEx to select the LUT entry
     // that creates the proper decimal point shift.
-    if (i_rst == 1'b1 || i_wb4s_cyc == 1'b0) begin
+    if (i_rst == 1'b1) begin
       r_lut_value = F_EE_LUT(L_ONE_TENGTH, 1);
     end
     else begin
@@ -393,7 +393,7 @@ module Goldschmidt_Integer_Divider_Parallel #(
   //               by modern synthesis tools.
   /////////////////////////////////////////////////////////////////////////////
   always @(posedge i_clk) begin : Dividen_Multiplication_Process
-    if (i_rst == 1'b0 && i_wb4s_cyc == 1'b1) begin
+    if (i_wb4s_cyc == 1'b1) begin
       // Multiply during active cycle
       r_product0 <= w_dividend_acc * w_multiplier;
     end
@@ -405,7 +405,7 @@ module Goldschmidt_Integer_Divider_Parallel #(
   //               by modern synthesis tools.
   /////////////////////////////////////////////////////////////////////////////
   always @(posedge i_clk) begin : Divisor_Multiplication_Process
-    if (i_rst == 1'b0 && i_wb4s_cyc == 1'b1) begin
+    if (i_wb4s_cyc == 1'b1) begin
       // Multiply during active cycle
       r_product1 <= w_divisor_acc * w_multiplier;
     end
