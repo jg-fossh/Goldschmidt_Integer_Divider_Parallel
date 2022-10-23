@@ -20,10 +20,13 @@ The Goldschmidt Integer Divider (parallel) is a fast division algorithm. This mo
   - [Syntax and Abbreviations](#syntax-and-abbreviations)
   - [Applicable Documents](#applicable-documents)
   - [Design](#design)
-    - [Division Process](#division-process)
+      - [Figure 1 : Division Block Diagram](#figure-1--division-block-diagram)
+    - [Division Accumulator Process](#division-accumulator-process)
+      - [Figure 2 : Divider Process FSM](#figure-2--divider-process-fsm)
     - [Optimizations](#optimizations)
       - [1's Complement vs 2's Complement](#1s-complement-vs-2s-complement)
       - [Function Generated Look Up Table](#function-generated-look-up-table)
+      - [Fixed Convergance Steps](#fixed-convergance-steps)
   - [Configurable Parameters](#configurable-parameters)
   - [Clocks and Resets](#clocks-and-resets)
   - [Interfaces](#interfaces)
@@ -87,15 +90,21 @@ $\dfrac{16}{4}$
 |   6    | 3.99999999999997 | 0.999999999999994 | 1.00000000000001 |
 |   7    | 4                | 1                 | 1                |
 
-The code implementation compares the size of the divisor against 2 ∗ 10^_n_ were _n_ is a natural number. The result of the comparison indicates the _m_ of 10^_m_, were _m_ is a negative integer, to multiply the divisor. Then the Goldschmidt division is performed until the divisor converges to degree indicated by `P GDIV ACCURACY`. The quotient returned is the rounded up value to which the dividend converged to. Each Goldschmidt step is performed in to two half steps in order use only half the multipliers and save resources. 
+The code implementation compares the size of the divisor against 2 ∗ 10^_n_ were _n_ is a natural number. The result of the comparison indicates the _m_ of 10^_m_, were _m_ is a negative integer, to multiply the divisor. Then the Goldschmidt division is performed until the divisor converges. The quotient returned is the rounded up value to which the dividend converged to. Each Goldschmidt step is performed in parallel for maximum per clock operations.
 
 The remainder calculation requires an extra clock cycle. The calculation simply takes the value after the decimal point of the quotient a multiplies it by the divisor.
 
-### Division Process
+#### Figure 1 : Division Block Diagram
 
-The division process is ruled by a two state FSM. The initial state first tests for special cases where either the dividend or divisor are zero, or if the are equal, or if the divisor is 1 or if the divisor is bigger than the dividend. These special cases bypass the iterative method and are handle in a single clock. When the standard division needs to be computed this state loads the lookup table's value to multiply the input factors. 
+![Division Process Design Diagram](Design_Diagram.jpeg)
+
+### Division Accumulator Process
+
+The division process is controlled by a two state FSM. The initial state first tests for special cases where either the dividend or divisor are zero, or if the are equal, or if the divisor is 1 or if the divisor is bigger than the dividend. These special cases bypass the iterative method and are handle in a single clock. When the standard division needs to be computed this state loads the lookup table's value to multiply the input factors. 
 
 The second state checks if the divisor has converged towards one. When it does converge it checks if the remainder needs to be calculated if not then the acknowledge signal is asserted and returns to the initial state.
+
+#### Figure 2 : Divider Process FSM
 
 ```mermaid
     stateDiagram-v2
@@ -107,8 +116,6 @@ The second state checks if the divisor has converged towards one. When it does c
     S_ITERATE --> S_INITIATE : !i_wb4s_cyc | w_converged
 
 ```
-
-![Division Process Design Diagram](Design_Diagram.jpeg)
 
 ### Optimizations
 
@@ -136,18 +143,23 @@ _NOTE: Given rounding errors this 1's complements approach will sometimes yield 
 
 #### Function Generated Look Up Table 
 
-To make this module reusable for input vectors of different sizes the lookup table that contains the fracional decimal numbers used to adjust the inputs is generated at compile time. The algorithm is simple; 0.1 repsented in binary form is represented by 0x0.199999... Where the first nibble after the fractional point is 0x1 and all other nibbles are 0x9. Therefore a concantation creates a vector of length `P_GDIV_FACTORS_MSB`+1 formed by {0x1, ((length/4)-1)*{0x9}}. This vector serves as the seed to create all other values in the table which are created by iterating a division by 10 until the last value larger than 0 is reached.
+To make this module reusable for input vectors of different sizes the lookup table that contains the fracional decimal numbers used to adjust the inputs is generated at compile time. The algorithm is simple; 0.1 repsented in binary form is represented by 0x0.199999... Where the first nibble after the fractional point is 0x1 and all other nibbles are 0x9. Therefore a concantation creates a vector of length `P_GDIV_FACTORS_MSB`+1 formed by `{0x1, ((length/4)-1)*{0x9}}`. This vector serves as the seed to create all other values in the table which are created by iterating a division by 10 until the last value larger than 0 is reached.
+
+#### Fixed Convergance Steps
+
+Because the algorithm converges towards the result at a quadratic rate the amount of steps needed quotient and remainder results are calculated at compile time by calculating the square root of the factors' length. This saves resources versus actually testing if the divisior has converged to '1' since the rounding operations for the divisor testing are no longer required.
+
+
 
 ## Configurable Parameters
 
 These are the compile time over-writable parameters.
 
-| Parameters            |  Range  |     Default State      | Description                                                                                                                                                                                                                                                    |
-| :-------------------- | :-----: | :--------------------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `P_GDIV_FACTORS_MSB`  | [7:255] |           7            | Dividend, divisor and results most significant bit.                                                                                                                                                                                                            |
-| `P_GDIV_FRAC_LENGTH`  | [8:256] | `P_GDIV_FACTORS_MSB`+1 | Amount of bits used for the vector's portion that represents the fractions digits. (Bits after the fixed point)                                                                                                                                                |
-| `P_GDIV_CONV_BITS`    | [1:256] |           8            | Divisor Convergence Threshold. How close to one does it getto accept the result. These are the 32bits after the decimal point, 0.XXXXXXXX expressed as an integer.The default value represent the 999 part of a 64bit binary fractional number equal to 0.999. |
-| `P_GDIV_ROUND_UP_LVL` | [1:256] |           3            | Number of bits to look at after the fixed point to decide whether or not to round up the result.                                                                                                                                                               |
+| Parameters            |  Range  |     Default State      | Description                                                                                                     |
+| :-------------------- | :-----: | :--------------------: | :-------------------------------------------------------------------------------------------------------------- |
+| `P_GDIV_FACTORS_MSB`  | [7:255] |           7            | Dividend, divisor and results most significant bit.                                                             |
+| `P_GDIV_FRAC_LENGTH`  | [8:256] | `P_GDIV_FACTORS_MSB`+1 | Amount of bits used for the vector's portion that represents the fractions digits. (Bits after the fixed point) |
+| `P_GDIV_ROUND_UP_LVL` | [1:256] |           3            | Number of bits to look at after the fixed point to decide whether or not to round up the result.                |
 
 ## Clocks and Resets
 

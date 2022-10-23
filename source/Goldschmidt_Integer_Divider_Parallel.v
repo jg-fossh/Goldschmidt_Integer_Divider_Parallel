@@ -375,8 +375,8 @@ module Goldschmidt_Integer_Divider_Parallel #(
 
   /////////////////////////////////////////////////////////////////////////////
   // Process     : Division Step Process
-  // Description : This is a generic code, generally inferred as a DSPs block
-  //               by modern synthesis tools.
+  // Description : Shifts in a '1' for every step of the division. This is used
+  //               to track the convergance for the quotient and remainder.
   /////////////////////////////////////////////////////////////////////////////
   always @(posedge i_clk) begin : Division_Step_Process
     if (r_stall == 1'b0) begin
