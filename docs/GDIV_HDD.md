@@ -2,14 +2,15 @@
 
 ## Sumary
 
-The Goldschmidt Integer Divider (parallel) is a fast division algorithm. This module is written in Verilog 2005 (IEEE Standard 1364-2005) using the least-or none-macro functions. This document contains details of the hardeware design & implementation, test bench design and implementation, and example sysnthesis projects.
+The Goldschmidt Integer Divider (parallel) is a fast division algorithm implementation. This module is written in Verilog 2005 (IEEE Standard 1364-2005). This document contains details of the hardware design, implementation, test bench, and example synthesis project.
 
 ## Change Log
 
-| Log                                      | Version | Contributor | Date       |
-| :--------------------------------------- | :------ | :---------- | :--------- |
-| Initial Release                          | v1.0.0  | Jose Garcia | 2021/09/01 |
-| Completly revised of code implementation | v2.0.0  | Jose Garcia | 2022/09/11 |
+| Log                            | Version | Contributor | Date       |
+| :----------------------------- | :------ | :---------- | :--------- |
+| Initial Release                | v1.0.0  | Jose Garcia | 2021/09/01 |
+| Revised of code implementation | v2.0.0  | Jose Garcia | 2022/09/11 |
+| Fixing some typos | v2.0.1  | Jose Garcia | 2022/11/01 |
 
 ## Table Of Contents
 
@@ -90,7 +91,7 @@ $\dfrac{16}{4}$
 |   6    | 3.99999999999997 | 0.999999999999994 | 1.00000000000001 |
 |   7    | 4                | 1                 | 1                |
 
-The code implementation compares the size of the divisor against 2 ∗ 10^_n_ were _n_ is a natural number. The result of the comparison indicates the _m_ of 10^_m_, were _m_ is a negative integer, to multiply the divisor. Then the Goldschmidt division is performed until the divisor converges. The quotient returned is the rounded up value to which the dividend converged to. Each Goldschmidt step is performed in parallel for maximum per clock operations.
+The code implementation compares the value of the divisor against $2^{10\times n}$ were $n$ is a natural number. The result of the comparison indicates the $m$ of $10^{-m}$ used to multiply the divisor. Then the Goldschmidt division is performed until the divisor converges. The quotient returned is the rounded up value to which the dividend converged to. Each Goldschmidt step is performed in parallel for maximum per clock operations.
 
 The remainder calculation requires an extra clock cycle. The calculation simply takes the value after the decimal point of the quotient a multiplies it by the divisor.
 
@@ -149,8 +150,6 @@ To make this module reusable for input vectors of different sizes the lookup tab
 
 Because the algorithm converges towards the result at a quadratic rate the amount of steps needed quotient and remainder results are calculated at compile time by calculating the square root of the factors' length. This saves resources versus actually testing if the divisior has converged to '1' since the rounding operations for the divisor testing are no longer required.
 
-
-
 ## Configurable Parameters
 
 These are the compile time over-writable parameters.
@@ -195,10 +194,11 @@ N/A
 ### Simulation Prerequisites
 
 Simulator : verilator v4.106
-Verification Framework : uvm-python
-Waveform Viewr : gtkwave
+Verification Framework : uvm-python(depends on cocotb)
+Waveform Viewer : gtkwave
 
 ### Simulating
+
 | Command      | Description                                    |
 | :----------- | :--------------------------------------------- |
 | `make`       | cleans, compiles and runs the test bench.      |
