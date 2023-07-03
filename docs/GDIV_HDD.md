@@ -6,11 +6,12 @@ The Goldschmidt Integer Divider (parallel) is a fast division algorithm implemen
 
 ## Change Log
 
-| Log                            | Version | Contributor | Date       |
-| :----------------------------- | :------ | :---------- | :--------- |
-| Initial Release                | v1.0.0  | Jose Garcia | 2021/09/01 |
-| Revised of code implementation | v2.0.0  | Jose Garcia | 2022/09/11 |
-| Fixing some typos | v2.0.1  | Jose Garcia | 2022/11/01 |
+| Log                                   | Version | Contributor | Date       |
+| :------------------------------------ | :------ | :---------- | :--------- |
+| Initial Release                       | v1.0.0  | Jose Garcia | 2021/09/01 |
+| Revised of code implementation        | v2.0.0  | Jose Garcia | 2022/09/11 |
+| Fixing some typos                     | v2.0.1  | Jose Garcia | 2022/11/01 |
+| Adding a new parameter & updating FSM | v2.0.2  | Jose Garcia | 2023/05/26 |
 
 ## Table Of Contents
 
@@ -24,7 +25,7 @@ The Goldschmidt Integer Divider (parallel) is a fast division algorithm implemen
       - [Figure 1 : Division Block Diagram](#figure-1--division-block-diagram)
     - [Division Accumulator Process](#division-accumulator-process)
       - [Figure 2 : Divider Process FSM](#figure-2--divider-process-fsm)
-    - [Optimizations](#optimizations)
+    - [Optimizations and Design Decisions](#optimizations-and-design-decisions)
       - [1's Complement vs 2's Complement](#1s-complement-vs-2s-complement)
       - [Function Generated Look Up Table](#function-generated-look-up-table)
       - [Fixed Convergance Steps](#fixed-convergance-steps)
@@ -71,8 +72,8 @@ The Goldschmidt Integer Divider (parallel) is a fast division algorithm implemen
 
 The Goldschmidt division is a fast division method. This division is a iterative process governed by the following equations:
 
-$$d(i) = d[i-1].(2-d[i-1])$$
-$$D(i) = D[i-1].(2-d[i-1])$$ 
+$$d_i = d_{i-1}.(2-d_{i-1})$$
+$$D_i = D_{i-1}.(2-d_{i-1})$$ 
 
 were $d$ is the divisor; $D$ is the dividend; $i$ is the step. $D$ converges toward the quotient and $d$ converges toward 1 at a quadratic rate. For the divisor to converge to 1 it must be less than 2 therefore integers greater than 2 must be multiplied by 10 to the negative powers to shift the decimal point.
 
@@ -109,16 +110,20 @@ The second state checks if the divisor has converged towards one. When it does c
 
 ```mermaid
     stateDiagram-v2
-    
-    S_INITIATE --> S_ITERATE : i_wb4s_cyc & i_wb4s_stb & !special_case
 
     S_INITIATE --> S_INITIATE : (i_wb4s_cyc & i_wb4s_stb & special_case) | !i_wb4s_cyc | !i_wb4s_stb 
+
+    S_INITIATE --> S_ITERATE : i_wb4s_cyc & i_wb4s_stb & !special_case & (w_divisor < 20)
+    S_INITIATE --> S_EE_MUL : i_wb4s_cyc & i_wb4s_stb & !special_case & (w_divisor >= 20)
+
+    S_EE_MUL --> S_ITERATE : 
+
     S_ITERATE --> S_ITERATE : i_wb4s_cyc & !w_converged
     S_ITERATE --> S_INITIATE : !i_wb4s_cyc | w_converged
 
 ```
 
-### Optimizations
+### Optimizations and Design Decisions
 
 The following describes design decisions used to optimized the design. These improve resource consumption and timing at the cost of results' precision.
 
@@ -126,7 +131,7 @@ The following describes design decisions used to optimized the design. These imp
 
 In the case of computing $2-d[i-1]$ let us consider the diference between the 2's and 1's complement. The 1's complement of a binary number is the invertion of each bit of the vector that repesents the number. On the other hand the 2's complement operation used to obtain the negative version of a number represented in binary form is the inversion of each bit followed by adding 1. Hence;
 
-$$2 - d[i-1] \equiv 2 + ( invert(d[i-1]) + 1)$$
+$$2 - d{i-1} \equiv 2 + ( invert(d_{i-1}) + 1)$$
 
 But as the bit resolution increases the effect less meaningful the contribution of the least significant bit in the magnitud of a binary represented number. Here is a demonstration.
 
@@ -138,7 +143,8 @@ But as the bit resolution increases the effect less meaningful the contribution 
 
 Taking the previous into consideration we can lower the computational complexity by skipping the addition of 1 after the invertion. For our purposes this is an acceptable rounding error, specially when taking into account that the larger the vector the less significant is the error and the more the plus can cost to implement. This is the resulting approximation implemented in the design:
 
-$$2 - d[i-1] \approxeq 2 + invert(d[i-1])$$
+$$2 - d_{i-1} \approxeq 2 + invert(d_{i-1})$$
+
 
 _NOTE: Given rounding errors this 1's complements approach will sometimes yield results that are more accurate than the actual 2's complement approach._ 
 
@@ -154,11 +160,12 @@ Because the algorithm converges towards the result at a quadratic rate the amoun
 
 These are the compile time over-writable parameters.
 
-| Parameters            |  Range  |     Default State      | Description                                                                                                     |
-| :-------------------- | :-----: | :--------------------: | :-------------------------------------------------------------------------------------------------------------- |
-| `P_GDIV_FACTORS_MSB`  | [7:255] |           7            | Dividend, divisor and results most significant bit.                                                             |
-| `P_GDIV_FRAC_LENGTH`  | [8:256] | `P_GDIV_FACTORS_MSB`+1 | Amount of bits used for the vector's portion that represents the fractions digits. (Bits after the fixed point) |
-| `P_GDIV_ROUND_UP_LVL` | [1:256] |           3            | Number of bits to look at after the fixed point to decide whether or not to round up the result.                |
+| Parameters            |                  Range                   |     Default State      | Description                                                                                                     |
+| :-------------------- | :--------------------------------------: | :--------------------: | :-------------------------------------------------------------------------------------------------------------- |
+| `P_GDIV_FACTORS_MSB`  |                 [7:255]                  |           7            | Dividend, divisor and results most significant bit.                                                             |
+| `P_GDIV_FRAC_LENGTH`  |                 [8:256]                  | `P_GDIV_FACTORS_MSB`+1 | Amount of bits used for the vector's portion that represents the fractions digits. (Bits after the fixed point) |
+| `P_GDIV_ROUND_UP_LVL` |                 [1:256]                  |           3            | Number of bits to look at after the fixed point to decide whether or not to round up the result.                |
+| `P_GDIV_RDUC_STP_BY`  | [0:$\sqrt{{P\_GDIV\_FACTORS\_MSB}+1}-1$] |           0            | Amount of steps to reduce(cut-off) the iterative process.                                                       |
 
 ## Clocks and Resets
 
@@ -193,18 +200,20 @@ N/A
 
 ### Simulation Prerequisites
 
-Simulator : verilator v4.106
-Verification Framework : uvm-python(depends on cocotb)
-Waveform Viewer : gtkwave
+- Simulator : verilator v4.106
+- Verification Framework : uvm-python(depends on cocotb)
+- Waveform Viewer : gtkwave
 
 ### Simulating
 
-| Command      | Description                                    |
-| :----------- | :--------------------------------------------- |
-| `make`       | cleans, compiles and runs the test bench.      |
-| `make clean` | cleans all the compile and simulation products |
+| Command               | Description                                    |
+| :-------------------- | :--------------------------------------------- |
+| `make`                | cleans, compiles and runs the test bench.      |
+| `make clean`          | cleans all the compile and simulation products |
+| `gtkwave wave32.gtkw` | call the wave form viewer.                     |
 
-![Simulation Waveform Snippet](wave.png)
+
+![Simulation Waveform Snippet](wave1.jpg)
 
 ## Synthesis
 

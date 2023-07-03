@@ -113,13 +113,12 @@ class tb_env(UVMEnv):
            Args:
              phase: connect_phase
         """
-
-        if (self.cfg.has_scoreboard):
-            self.wb4s_agent.ap.connect(self.scoreboard.after_export)
-
         if (self.cfg.has_predictor):
             self.predictor.data_length = self.cfg.DUT_SLAVE_DATA_IN_LENGTH
             self.wb4s_agent.ap.connect(self.predictor.analysis_export)
+
+        if (self.cfg.has_scoreboard):
+            self.wb4s_agent.ap.connect(self.scoreboard.after_export)
             self.predictor.ap.connect(self.scoreboard.before_export)
 
         if (self.cfg.has_functional_coverage):

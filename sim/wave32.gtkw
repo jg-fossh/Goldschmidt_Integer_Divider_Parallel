@@ -1,18 +1,19 @@
 [*]
-[*] GTKWave Analyzer v3.3.111 (w)1999-2020 BSI
-[*] Fri Sep 23 18:47:20 2022
+[*] GTKWave Analyzer v3.3.114 (w)1999-2023 BSI
+[*] Sat May 27 03:36:17 2023
 [*]
-[dumpfile] "/home/jota/Sandbox/Goldschmidt_Integer_Divider_Parallel/sim/dump.fst"
-[dumpfile_mtime] "Fri Sep 23 18:40:28 2022"
-[dumpfile_size] 8828
-[savefile] "/home/jota/Sandbox/Goldschmidt_Integer_Divider_Parallel/sim/2wave32.gtkw"
-[timestart] 18260000000
-[size] 1920 1031
+[dumpfile] "/home/jota/Sandbox/tools/Goldschmidt_Integer_Divider_Parallel/sim/dump.fst"
+[dumpfile_mtime] "Sat May 27 03:32:48 2023"
+[dumpfile_size] 10998
+[savefile] "/home/jota/Sandbox/tools/Goldschmidt_Integer_Divider_Parallel/sim/wave32.gtkw"
+[timestart] 9870000000
+[size] 1366 708
 [pos] 0 0
-*-31.126781 19330000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
-[treeopen] .
-[treeopen] .TB_TOP.
-[sst_width] 39
+*-31.377289 12310000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] TB_TOP.
+[treeopen] TB_TOP.dut.
+[treeopen] TB_TOP.dut.Bram_Lut.
+[sst_width] 37
 [signals_width] 341
 [sst_expanded] 0
 [sst_vpaned_height] 306
@@ -34,6 +35,15 @@ TB_TOP.dut.P_GDIV_FACTORS_MSB
 TB_TOP.dut.P_GDIV_FRAC_LENGTH
 TB_TOP.dut.P_GDIV_ROUND_LVL
 TB_TOP.dut.iter
+TB_TOP.dut.L_BRAM_ADDR_MSB
+TB_TOP.dut.Bram_Lut.L_MASK_MODE
+TB_TOP.dut.Bram_Lut.P_SPRAM_ADDR_MSB
+TB_TOP.dut.Bram_Lut.P_SPRAM_DATA_MSB
+TB_TOP.dut.Bram_Lut.P_SPRAM_HAS_FILE
+@820
+TB_TOP.dut.Bram_Lut.P_SPRAM_INIT_FILE
+@420
+TB_TOP.dut.Bram_Lut.P_SPRAM_MASK_MSB
 @200
 -
 @28
@@ -59,6 +69,7 @@ TB_TOP.dut.o_wb4s_data[31:0]
 -
 @28
 TB_TOP.dut.s_initiate
+TB_TOP.dut.s_ee_mul
 TB_TOP.dut.s_iterate
 TB_TOP.dut.r_calc_remainder
 TB_TOP.dut.w_divisor_is_neg_one
@@ -68,16 +79,13 @@ TB_TOP.dut.w_equal_factors
 TB_TOP.dut.w_less_than
 @420
 TB_TOP.dut.r_divisor[31:0]
-@40000024
-[fpshift_count] 32
-TB_TOP.dut.r_lut_value[31:0]
 @28
 TB_TOP.dut.r_neg_result
 TB_TOP.dut.r_ack
 TB_TOP.dut.r_stall
 @200
 -
-@23
+@22
 TB_TOP.dut.r_div_step[7:0]
 @28
 TB_TOP.dut.w_converged
@@ -89,8 +97,6 @@ TB_TOP.dut.w_divisor[31:0]
 TB_TOP.dut.w_dividend_acc[63:0]
 [fpshift_count] 32
 TB_TOP.dut.w_divisor_acc[63:0]
-[fpshift_count] 32
-TB_TOP.dut.w_lut_value[63:0]
 [fpshift_count] 32
 TB_TOP.dut.w_two_minus_divisor[63:0]
 [fpshift_count] 32
@@ -105,5 +111,23 @@ TB_TOP.dut.r_rem_zero
 TB_TOP.dut.w_result_mag[31:0]
 TB_TOP.dut.w_result[31:0]
 TB_TOP.dut.r_1step_result[31:0]
+@22
+TB_TOP.dut.w_addr[3:0]
+TB_TOP.dut.w_lut_value[31:0]
+@200
+-
+@22
+TB_TOP.dut.Bram_Lut.Write_Mask_Mode_Disable.r_ram[0][31:0]
+TB_TOP.dut.Bram_Lut.Write_Mask_Mode_Disable.r_ram[1][31:0]
+TB_TOP.dut.Bram_Lut.Write_Mask_Mode_Disable.r_ram[2][31:0]
+TB_TOP.dut.Bram_Lut.Write_Mask_Mode_Disable.r_ram[3][31:0]
+TB_TOP.dut.Bram_Lut.Write_Mask_Mode_Disable.r_ram[4][31:0]
+TB_TOP.dut.Bram_Lut.Write_Mask_Mode_Disable.r_ram[5][31:0]
+TB_TOP.dut.Bram_Lut.Write_Mask_Mode_Disable.r_ram[6][31:0]
+TB_TOP.dut.Bram_Lut.Write_Mask_Mode_Disable.r_ram[7][31:0]
+TB_TOP.dut.Bram_Lut.Write_Mask_Mode_Disable.r_ram[8][31:0]
+TB_TOP.dut.Bram_Lut.Write_Mask_Mode_Disable.r_ram[9][31:0]
+TB_TOP.dut.Bram_Lut.Write_Mask_Mode_Disable.r_ram[10][31:0]
+TB_TOP.dut.Bram_Lut.Write_Mask_Mode_Disable.r_ram[15][31:0]
 [pattern_trace] 1
 [pattern_trace] 0

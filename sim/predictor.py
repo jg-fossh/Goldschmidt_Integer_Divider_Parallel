@@ -133,11 +133,11 @@ class predictor(UVMSubscriber):
             else:
                 result_int = -1
 
-        uvm_info(self.get_type_name(), sv.sformatf("write() \
-            \n  Dividen: %d <=> 0x%h \
-            \n  Divisor: %d <=> 0x%h \
-            \n  Result : %d <=> 0x%h",\
-            dividend, dividend, divisor, divisor, round(result_int), round(result_int)), UVM_NONE)
+        #uvm_info(self.get_type_name(), sv.sformatf("write() \
+        #    \n  Dividen: %d <=> 0x%h \
+        #    \n  Divisor: %d <=> 0x%h \
+        #    \n  Result : %d <=> 0x%h",\
+        #    dividend, dividend, divisor, divisor, round(result_int), round(result_int)), UVM_NONE)
 
         self.create_response(t, round(result_int))
 

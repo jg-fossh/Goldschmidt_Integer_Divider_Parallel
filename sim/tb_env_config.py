@@ -68,8 +68,8 @@ class tb_env_config(UVMEnv):
         #
         self.wb4s_agent_cfg = wb4s_config.type_id.create("wb4s_agent_cfg", self)
         #
-        self.has_scoreboard = False           # scoreboard on/off
-        self.has_predictor  = False           # predictor on/off
+        self.has_scoreboard          = False  # scoreboard on/off
+        self.has_predictor           = False  # predictor on/off
         self.has_functional_coverage = False  # coverage on/off
         #
         self.DUT_SLAVE_DATA_IN_LENGTH = 0

@@ -102,9 +102,9 @@ async def top(dut):
                       "stall_o": "o_wb4s_stall",
                       "ack_o": "o_wb4s_ack",
                       "tga_i": "tga_i",
-                      "tgd_i": "tgd_i",
+                      "tgd_i": "tgc_i",
                       "tgd_o": "tgd_o",
-                      "tgc_i": "i_wb4s_tgc" }
+                      "tgc_i": "i_wb4s_tgd" }
 
     vif_slave = wb4s_if(dut, slave_bus_map)
 

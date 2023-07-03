@@ -1,0 +1,106 @@
+[*]
+[*] GTKWave Analyzer v3.3.114 (w)1999-2023 BSI
+[*] Sun Jul  2 23:38:38 2023
+[*]
+[dumpfile] "/home/jota/Sandbox/Repos/Goldschmidt_Integer_Divider_Parallel/sim/dump.fst"
+[dumpfile_mtime] "Sun Jul  2 23:33:43 2023"
+[dumpfile_size] 6141
+[savefile] "/home/jota/Sandbox/Repos/Goldschmidt_Integer_Divider_Parallel/sim/wave24_FF.gtkw"
+[timestart] 10711000000
+[size] 1366 708
+[pos] -1 -1
+*-30.807957 12290000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] TB_TOP.
+[sst_width] 37
+[signals_width] 317
+[sst_expanded] 0
+[sst_vpaned_height] 228
+@200
+-Parameters
+@420
+TB_TOP.dut.P_GDIV_FACTORS_MSB
+TB_TOP.dut.P_GDIV_FRAC_LENGTH
+TB_TOP.dut.P_GDIV_RDUC_STP_BY
+TB_TOP.dut.P_GDIV_ROUND_LVL
+TB_TOP.dut.L_ARRAY_HIGH
+TB_TOP.dut.L_FACTOR1_LSB
+TB_TOP.dut.L_FACTOR1_MSB
+TB_TOP.dut.L_LUT_MSB
+TB_TOP.dut.L_MUL_FACTORS_MSB
+TB_TOP.dut.L_NINE_NIBLES
+TB_TOP.dut.L_NUMBER_TWO_EXT
+@40000025
+[fpshift_count] 25
+TB_TOP.dut.L_ONE_TENGTH
+@420
+TB_TOP.dut.L_PRODUCT_MSB
+TB_TOP.dut.L_QUO_LIMIT
+TB_TOP.dut.L_REM_LIMIT
+TB_TOP.dut.L_STEP_PRODUCT_LSB
+TB_TOP.dut.L_TWOS_LEADING_ZEROS
+@200
+-Interface
+@28
+TB_TOP.dut.i_clk
+TB_TOP.dut.i_rst
+TB_TOP.dut.i_wb4s_cyc
+TB_TOP.dut.i_wb4s_stb
+@22
+TB_TOP.dut.i_wb4s_data[49:0]
+@28
+TB_TOP.dut.o_wb4s_ack
+@24
+TB_TOP.dut.o_wb4s_data[24:0]
+@28
+TB_TOP.dut.o_wb4s_stall
+@420
+TB_TOP.dut.iter
+@22
+TB_TOP.dut.r_1step_result[24:0]
+@28
+TB_TOP.dut.r_calc_remainder
+TB_TOP.dut.r_ack
+TB_TOP.dut.r_stall
+@24
+TB_TOP.dut.r_divisor[24:0]
+@28
+TB_TOP.dut.r_gte_twenty
+@40000024
+[fpshift_count] 25
+TB_TOP.dut.r_lut_value[24:0]
+@28
+TB_TOP.dut.r_neg_result
+TB_TOP.dut.r_rem_zero
+TB_TOP.dut.s_initiate
+TB_TOP.dut.s_ee_mul
+TB_TOP.dut.s_iterate
+TB_TOP.dut.w_divisor_is_neg_one
+TB_TOP.dut.w_divisor_is_one
+TB_TOP.dut.w_divisor_zero
+TB_TOP.dut.w_equal_factors
+TB_TOP.dut.w_less_than
+TB_TOP.dut.w_ceil
+TB_TOP.dut.w_converged
+@22
+TB_TOP.dut.r_div_step[7:0]
+@24
+TB_TOP.dut.w_dividend[24:0]
+TB_TOP.dut.w_divisor[24:0]
+@40000024
+[fpshift_count] 25
+TB_TOP.dut.w_dividend_acc[49:0]
+[fpshift_count] 25
+TB_TOP.dut.w_divisor_acc[49:0]
+[fpshift_count] 25
+TB_TOP.dut.w_multiplier[49:0]
+@22
+TB_TOP.dut.r_product0[74:0]
+TB_TOP.dut.r_product1[74:0]
+@24
+TB_TOP.dut.w_result[24:0]
+TB_TOP.dut.w_result_mag[24:0]
+@40000024
+[fpshift_count] 25
+TB_TOP.dut.w_two_minus_divisor[49:0]
+[pattern_trace] 1
+[pattern_trace] 0

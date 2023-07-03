@@ -1,4 +1,4 @@
-read_verilog "../../source/Goldschmidt_Integer_Divider_Parallel.v"
+read_verilog "../../externals/Generic_Simple_DPRAM/source/Generic_Simple_DPRAM.v" "../../source/Goldschmidt_Integer_Divider_Parallel_FF.v"
 #prep -top Goldschmidt_Integer_Divider_Parallel
 #splitnets
 #write_json Goldschmidt_Integer_Divider_Parallel_syn.json

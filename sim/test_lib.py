@@ -85,7 +85,7 @@ class test_base(UVMTest):
         self.tb_env_config.has_predictor            = True
         self.tb_env_config.has_functional_coverage  = False
         self.tb_env_config.DUT_SLAVE_DATA_IN_LENGTH = arr[0]
-        self.tb_env_config.data_bins_range          = [500, 600]
+        self.tb_env_config.data_bins_range          = [0, 0xFFFFFFFF]
 
         # Create the Mem Read agent
         self.wb4s_agent_cfg = wb4s_config.type_id.create("wb4s_agent_cfg", self)
@@ -174,14 +174,22 @@ class default_test(test_base):
         #slave_proc  = cocotb.fork(self.stimulate_slave_intfc())
 
         await Timer(16, "NS") # Allow some clocks for evething to settle
+
+        uvm_info(self.get_type_name(),
+            sv.sformatf("\nSim Started\n"), UVM_LOW)
         await sv.fork_join_any([slave_proc])
 
+        uvm_info(self.get_type_name(),
+            sv.sformatf("\nSim Finished\n"), UVM_LOW)
+
         phase.drop_objection(self, "default_test drop objection")
+
 
 
     async def random_stimulat_intfc(self):
         #
         top_rng    = int(pow(2, (self.tb_env.cfg.DUT_SLAVE_DATA_IN_LENGTH)/2))
+        #top_rng    = int(pow(2, (self.tb_env.cfg.DUT_SLAVE_DATA_IN_LENGTH)/4))
         stop_count = 25
         wb4s_sqr   = self.tb_env.wb4s_agent.sqr
         
@@ -190,7 +198,7 @@ class default_test(test_base):
         increment_sum_seq.data      = 51966 #0xCAFE
         increment_sum_seq.cycle     = 0
         increment_sum_seq.strobe    = 0
-        increment_sum_seq.cycle_tag = 0
+        increment_sum_seq.cycle_tag = 1
 
         await increment_sum_seq.start(wb4s_sqr)
         
@@ -201,9 +209,10 @@ class default_test(test_base):
             # Create transactions to stimulate the slave interface (calc division)
             increment_sum_seq           = wb4s_single_write_seq("increment_sum_seq")
             increment_sum_seq.data      = (rnd.randint(0,top_rng) << math.floor(self.tb_env.cfg.DUT_SLAVE_DATA_IN_LENGTH/2)) + rnd.randint(0,top_rng)
+            #increment_sum_seq.data      = ((top_rng-1-(stop_count*stop_count*10000)) << math.floor(self.tb_env.cfg.DUT_SLAVE_DATA_IN_LENGTH/2)) + (top_rng-stop_count-1)
             increment_sum_seq.strobe    = 1 # rnd.randint(0,2)
             increment_sum_seq.cycle     = 1 #rnd.randint(0,2)
-            increment_sum_seq.cycle_tag = rnd.randint(0,4)
+            increment_sum_seq.cycle_tag = 1#rnd.randint(0,4)
 
             await increment_sum_seq.start(wb4s_sqr)
 

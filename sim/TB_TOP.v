@@ -42,17 +42,17 @@
 //
 /////////////////////////////////////////////////////////////////////////////////
 module TB_TOP #(
-  parameter integer P_GDIV_FACTORS_MSB = 31,                   // The MSB of each division factor.
+  parameter integer P_GDIV_FACTORS_MSB = 24,                   // The MSB of each division factor.
   parameter integer P_GDIV_FRAC_LENGTH = P_GDIV_FACTORS_MSB+1, // he amount of bits after the fixed point.
-  parameter integer P_GDIV_CONV_BITS   = P_GDIV_FRAC_LENGTH,   // Bits that must = 0 to determine convergence
-  parameter integer P_GDIV_ROUND_LVL   = 3                     // Bits after fixed point that need to be '1' to round up result.
+  parameter integer P_GDIV_ROUND_LVL   = 3,                    // Bits after fixed point that need to be '1' to round up result.
+  parameter integer P_GDIV_RDUC_STP_BY = 0
 )(
   // Component's clocks and resets
   input i_clk, // clock
   input i_rst, // reset
   // WB4S Pipeline Interface
   input                               i_wb4s_cyc,   // WB cyc, active/abort signal
-  input  [1:0]                        i_wb4s_tgc,   // [1] 0=quotient, 1=rem; [0] 0=signed, 1=unsigned
+  input  [1:0]                        i_wb4s_tgd,   // [1] 0=quotient, 1=rem; [0] 0=signed, 1=unsigned
   input                               i_wb4s_stb,   // WB stb, valid strobe
   input  [(P_GDIV_FACTORS_MSB*2)+1:0] i_wb4s_data,  // WB data, {divisor, dividend}
   output                              o_wb4s_stall, // WB stall, not ready
@@ -63,7 +63,7 @@ module TB_TOP #(
   input  we_i,  //
   input  sel_i, //
   output tga_i, // Added to stub connections
-  output tgd_i, // Added to stub connections
+  input  tgc_i, // Added to stub connections
   output tgd_o  // Added to stub connections
 );
 
@@ -85,7 +85,8 @@ module TB_TOP #(
   Goldschmidt_Integer_Divider_Parallel #(
     .P_GDIV_FACTORS_MSB(P_GDIV_FACTORS_MSB), 
     .P_GDIV_FRAC_LENGTH(P_GDIV_FRAC_LENGTH),
-    .P_GDIV_ROUND_LVL(P_GDIV_ROUND_LVL)
+    .P_GDIV_ROUND_LVL(P_GDIV_ROUND_LVL),
+    .P_GDIV_RDUC_STP_BY(P_GDIV_RDUC_STP_BY)
   ) dut (
     // Component's clocks and resets
     .i_clk(i_clk), // clock
@@ -94,7 +95,7 @@ module TB_TOP #(
     .i_wb4s_cyc(i_wb4s_cyc),     // WB stb, valid strobe
     .i_wb4s_stb(i_wb4s_stb),     // WB stb, valid strobe
     .i_wb4s_data(i_wb4s_data),   // WB data 0
-    .i_wb4s_tgc(i_wb4s_tgc),     // WB data tag, 0=add 1=substract
+    .i_wb4s_tgd(i_wb4s_tgd),     // WB data tag, 0=add 1=substract
     .o_wb4s_stall(o_wb4s_stall), // WB stall, not ready
     .o_wb4s_ack(o_wb4s_ack),     // WB write enable
     .o_wb4s_data(o_wb4s_data)    // WB data, result
